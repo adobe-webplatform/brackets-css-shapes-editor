@@ -1,9 +1,13 @@
 {
     "name": "css-shapes-editor",
-    "title": "Edit CSS Shapes Properties inline",
-    "description": "Lets the user edit in the live preview the value of select css shapes properties.",
-    "version": "1.0.0",
-    "author": "François REMY <francois.remy.dev@outlook.com> (http://fremycompany.com/) for Adobe Systems Incorporated",
+    "title": "Edit CSS Shapes properties in the browser",
+    "description": "Adds an on-screen GUI editor to edit CSS Shapes values when in Live Preview mode.",
+    "version": "0.1.0",
+    "author": "Adobe Systems Inc.",
+    "contributors": [
+      "Razvan Caliman <rcaliman@adobe.com>",
+      "François REMY <francois.remy.dev@outlook.com>"
+    ],
     "license": "MIT",
     "categories": "editing"
 }
