@@ -32,13 +32,16 @@ define(function (require, exports, module) {
         LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
         Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
         Model               = require("Model");
-
-    var EditorDriver        = require('text!EditorDriver.js'),
-        CSSShapesEditor     = require('text!lib/CSSShapesEditor.js');
         
-    // Constants
+    var EditorDriver            = require('text!EditorDriver.js'),
+        CSSShapesEditor         = require('text!lib/CSSShapesEditor.js'),
+        CSSShapesEditorProvider = require('text!lib/CSSShapesEditorProvider.js');
+        
+    // Update this if you add editor providers for new properties
     var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
+    
     var currentEditor = EditorManager.getActiveEditor();
+    
     var model = new Model({
         'property': null,
         'value': null,
@@ -46,7 +49,6 @@ define(function (require, exports, module) {
     });
     
     model.on('change', function(e){
-        console.log('modelchange ', e);
         _setupLiveEditor()
     })
     
@@ -82,6 +84,7 @@ define(function (require, exports, module) {
         
         // Looking just for the context of a CSS property value
         if (info.context !== CSSUtils.PROP_VALUE){
+            _removeLiveEditor();
             return;
         }
         
@@ -92,6 +95,7 @@ define(function (require, exports, module) {
 
         if (SUPPORTED_PROPS.indexOf(info.name) < 0){
             // not the property we're looking for
+            _removeLiveEditor();
             return;
         }
         
@@ -100,23 +104,20 @@ define(function (require, exports, module) {
         selector = CSSUtils.findSelectorAtDocumentPos(currentEditor, selection.start);
         
         if (!selector || typeof selector !== 'string'){
+            _removeLiveEditor();
             return;
         }
         
-        var oldSelector = model.get('selector');
         model.set('selector', selector, true);
         model.set('property', info.name, true);
         model.set('value', info.values.join(''), false);
     }
 
     var _contentChange = function(){
-        console.warn('content')
+        // TODO: call .update(model) in driver
     }
     
-    $(EditorManager).on("activeEditorChange", onEditorChanged);
-	onEditorChanged();
-    
-    // setup a live editor with the current model
+    // tell the in-page driver to setup an editor with the current model
     function _setupLiveEditor(){
         if (!Inspector.connected()){
             console.warn('inspector not connected')
@@ -130,17 +131,28 @@ define(function (require, exports, module) {
         })
     }
     
-    // updates the live editor with the current model
+    // update the live editor with the current model
     function _updateLiveEditor(){}
     
-    // turns off any active live editor
-    function _stopLiveEditor(){}
+    // turn off any active live editor
+    function _removeLiveEditor(){
+        if (!Inspector.connected()){
+            console.warn('inspector not connected')
+            return;
+        }
+        
+        var expr = '_LD_CSS_EDITOR.remove()';
+        
+        return Inspector.Runtime.evaluate(expr, function(e){
+            console.log('remove', e)
+        })
+    }
     
     // syncs current model with that of the live editor
     function _syncWithLiveEditor(){}
     
     function _injectLiveEditorDriver(){
-        var script = [EditorDriver, CSSShapesEditor].join(';');
+        var script = [EditorDriver, CSSShapesEditor, CSSShapesEditorProvider].join(';');
         return Inspector.Runtime.evaluate(script, function(e){
             console.log('injet', e)
         })
@@ -154,5 +166,7 @@ define(function (require, exports, module) {
     }
     
     $(LiveDevelopment).on("statusChange", onStatusChange);
+    $(EditorManager).on("activeEditorChange", onEditorChanged);
+    onEditorChanged();
     
 });
