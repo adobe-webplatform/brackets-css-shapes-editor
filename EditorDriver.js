@@ -22,13 +22,76 @@
 
 (function() {
     
-    var _currentEditor = null,
+    var _providers = {},
+        _activeEditor = null,
+        _target = null,
         _model = null;
+    
+    function _onValueChange = function(value){
+        if (!_target || !value){
+            return
+        }
+        
+        // update the selector target's style
+        _target.style[_model.property] = value;
+        
+        // update the model. will be requested by Brackets to sync code editor
+        _model.value = value;
+    }
     
     // var cssLiveDev = window._LD_CSS_EDITOR = {
     window._LD_CSS_EDITOR = {
         setup: function(model){
+            console.info(model)
             console.warn('Habemus model')
+            
+            if (!_providers[model.property]){
+                console.warn('no editor provided for property: ' + model.property)
+                return
+            }
+            
+            // find the first matching element from the given selector
+            // TODO: implement querySelectorAll() navigation through multiple results
+            _target = document.querySelector(model.selector);
+            
+            if (!_target){
+                console.warn('no element matching selector: ' + model.selector)
+                return;
+            }
+            
+            _activeEditor = new _providers[model.property].call(_target, model);
+        },
+        
+        remove: function(){
+            _activeEditor.remove()
+            _activeEditor = null;
+            _model = null;
+        },
+        
+        update: function(model){
+            _activeEditor.update(model)
+        },
+        /*
+            Register an editor for the given CSS property.
+            When the given property is passed in the model to .setup(),
+            the specified editor should be invoked.
+            
+            Editors need to implement the `iLiveEditor` interface:
+            {   
+                // turns on editor on specified target HTMLElement. Picks-up necessary args from model
+                setup: function(target, model){},
+                
+                // update the editor state given the provided model
+                update: function(model){},
+                
+                // turn off the editor and remove any scaffolding
+                remove: function(){},
+                
+                // must call .onValueChange(val) with the new value
+            }
+        */
+        registerProvider: function(property, editor){
+            _providers[property] = editor;
         }
     };
     
