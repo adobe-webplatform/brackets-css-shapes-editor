@@ -67,6 +67,8 @@ define(function (require, exports, module){
             get: function(key){
                 return _props[key];
             },
+            
+            attributes: _props[key],
 
             on: function(eventName, fn){
                 _events[eventName] = _events[eventName] || [];
