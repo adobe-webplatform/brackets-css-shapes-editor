@@ -32,8 +32,9 @@ define(function (require, exports, module) {
         LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
         Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
         Model               = require("Model");
-        
-        var deps = require('text!third-party/test.js');
+
+    var EditorDriver        = require('text!EditorDriver.js'),
+        CSSShapesEditor     = require('text!lib/CSSShapesEditor.js');
         
     // Constants
     var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
@@ -111,59 +112,44 @@ define(function (require, exports, module) {
         console.warn('content')
     }
     
-    function editor_init() {
-        
-        var bwScript = "var _LD_CSS_EDITOR={};";
-        bwScript = bwScript + deps;
+    $(EditorManager).on("activeEditorChange", onEditorChanged);
+	onEditorChanged();
     
-        // add error handling
-        bwScript = "try { "+bwScript+" } catch(ex) { console.warn(ex+'\\n\\n'+ex.stack); }";
+    // setups the live editor with the current model
+    // function _setupLiveEditor(){
+    //     console.log('wat!!!');
+    // 
+    //     var expr = '_LD_CSS_EDITOR.start("OPREAAA")';
+    //     
+    //     Inspector.Runtime.evaluate("('_LD_CSS_EDITOR' in window)")
+    //         .then(function(v) {
+    //             console.log('res', v)
+    //         })
+    //     
+    //     return Inspector.Runtime.evaluate(expr)
+    // }
+    // 
+    // // updates the live editor with the current model
+    // function _updateLiveEditor(){}
+    // 
+    // // turns off any active live editor
+    // function _stopLiveEditor(){}
+    // 
+    // // syncs current model with that of the live editor
+    // function _syncWithLiveEditor(){}
+    // 
+    function _injectLiveEditorDriver(){
+        var script = [EditorDriver, CSSShapesEditor].join(';');
+        return Inspector.Runtime.evaluate(script)
+    } 
         
-        return Inspector.Runtime.evaluate("('_LD_CSS_EDITOR' in window)")
-        .then(function(v) {
-            if(!v || !v.result || !v.result.value) {
-                Inspector.Runtime.evaluate(bwScript)//.then(ignore)//.then(resetLivePreview);
-            }
-        })
+    // load those scripts into the page
+    function onStatusChange(event, status) {
+        if (status >= LiveDevelopment.STATUS_ACTIVE) {
+            _injectLiveEditorDriver();
+        }
     }
     
-    // function editor_startEditing(selector,property,value) {
-    //  return (
-    //             editor_init()
-    //             .then(function() {
-    //                 return Inspector.Runtime.evaluate(
-    //                  "_LD_CSS_EDITOR.startEditing("+
-    //                      "unescape('"+escape(property)+"'),"+
-    //                      "unescape('"+escape(selector)+"'),"+
-    //                      "unescape('"+escape(value)+"')"+
-    //                  ")"
-    //                 )
-    //          })
-    //         );
-    // }
-    
-    // function editor_getCurrentCSSValue() {
-    //  return Inspector.Runtime.evaluate(
-    //      "_LD_CSS_EDITOR.currentCSSValue"
-    //  )
-    // }
-    
-    
-    // load those scripts into the page
-    !function() {
-     
-     function onReady() {
-         editor_init(); 
-     }
-    
-     function onStatusChange(event, status) {
-        if (status >= LiveDevelopment.STATUS_ACTIVE) {
-            onReady();
-        }
-     }
-     
-     $(LiveDevelopment).on("statusChange", onStatusChange);
-     
-    }();
+    $(LiveDevelopment).on("statusChange", onStatusChange);
     
 });
