@@ -27,7 +27,7 @@
         _target = null,
         _model = null;
     
-    function _onValueChange = function(value){
+    function _onValueChange(value){
         if (!_target || !value){
             return
         }
@@ -42,24 +42,24 @@
     // var cssLiveDev = window._LD_CSS_EDITOR = {
     window._LD_CSS_EDITOR = {
         setup: function(model){
-            console.info(model)
-            console.warn('Habemus model')
+            console.log(model.selector, model.property, model.value, model.x);
+            console.log('Habemus model')
             
-            if (!_providers[model.property]){
-                console.warn('no editor provided for property: ' + model.property)
-                return
-            }
-            
-            // find the first matching element from the given selector
-            // TODO: implement querySelectorAll() navigation through multiple results
-            _target = document.querySelector(model.selector);
-            
-            if (!_target){
-                console.warn('no element matching selector: ' + model.selector)
-                return;
-            }
-            
-            _activeEditor = new _providers[model.property].call(_target, model);
+            // if (!_providers[model.property]){
+            //     console.warn('no editor provided for property: ' + model.property)
+            //     return
+            // }
+            // 
+            // // find the first matching element from the given selector
+            // // TODO: implement querySelectorAll() navigation through multiple results
+            // _target = document.querySelector(model.selector);
+            // 
+            // if (!_target){
+            //     console.warn('no element matching selector: ' + model.selector)
+            //     return;
+            // }
+            // 
+            // _activeEditor = new _providers[model.property].call(_target, model);
         },
         
         remove: function(){
@@ -95,7 +95,7 @@
         }
     };
     
-    console.log('driver injected!!')
+    console.log('Driver was injected!')
     
     // bind all functions to the instance, to allow direct use as callbacks
     // Object.keys(cssLiveDev).forEach(function(k) {

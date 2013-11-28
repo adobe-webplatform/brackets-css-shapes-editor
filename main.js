@@ -46,7 +46,8 @@ define(function (require, exports, module) {
     });
     
     model.on('change', function(e){
-        console.log('the change is here', e);
+        console.log('modelchange ', e);
+        _setupLiveEditor()
     })
     
     // some callbacks
@@ -115,32 +116,34 @@ define(function (require, exports, module) {
     $(EditorManager).on("activeEditorChange", onEditorChanged);
 	onEditorChanged();
     
-    // setups the live editor with the current model
-    // function _setupLiveEditor(){
-    //     console.log('wat!!!');
-    // 
-    //     var expr = '_LD_CSS_EDITOR.start("OPREAAA")';
-    //     
-    //     Inspector.Runtime.evaluate("('_LD_CSS_EDITOR' in window)")
-    //         .then(function(v) {
-    //             console.log('res', v)
-    //         })
-    //     
-    //     return Inspector.Runtime.evaluate(expr)
-    // }
-    // 
-    // // updates the live editor with the current model
-    // function _updateLiveEditor(){}
-    // 
-    // // turns off any active live editor
-    // function _stopLiveEditor(){}
-    // 
-    // // syncs current model with that of the live editor
-    // function _syncWithLiveEditor(){}
-    // 
+    // setup a live editor with the current model
+    function _setupLiveEditor(){
+        if (!Inspector.connected()){
+            console.warn('inspector not connected')
+            return;
+        }
+        
+        var expr = '_LD_CSS_EDITOR.setup('+ JSON.stringify(model.attributes) +')';
+        
+        return Inspector.Runtime.evaluate(expr, function(e){
+            console.log('setup', e)
+        })
+    }
+    
+    // updates the live editor with the current model
+    function _updateLiveEditor(){}
+    
+    // turns off any active live editor
+    function _stopLiveEditor(){}
+    
+    // syncs current model with that of the live editor
+    function _syncWithLiveEditor(){}
+    
     function _injectLiveEditorDriver(){
         var script = [EditorDriver, CSSShapesEditor].join(';');
-        return Inspector.Runtime.evaluate(script)
+        return Inspector.Runtime.evaluate(script, function(e){
+            console.log('injet', e)
+        })
     } 
         
     // load those scripts into the page
