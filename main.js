@@ -70,6 +70,61 @@ define(function (require, exports, module) {
             $(currentEditor).on("cursorActivity", _selectionChange)
             $(currentEditor).on("change", _contentChange) 
         }
+    }
+    
+    
+    /*
+        Returns the range that wraps the CSS value at the given pos.
+        Assumes pos is within or adjacent to a CSS value (between : and ; or })
+        
+        @param {!{line:number, ch:number}} pos
+        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
+        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
+    */
+    var _getCSSValueRangeAt = function(pos, trimWhitespace){
+        // TODO support multi-line values
+        var line = currentEditor.document.getLine(pos.line),
+            start = pos.ch,
+            end = pos.ch;
+            
+        // css values start after a colon (:)
+        function isStartBoundaryChar(ch){
+            return (/:/.test(ch));
+        }
+        
+        // css values end before a semicolon (;) or closing bracket (})
+        function isEndBoundaryChar(ch){
+            return (/[;}]/.test(ch));
+        }
+        
+        function isWhitespaceChar(ch){
+            return (/\s/.test(ch));
+        }
+        
+        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
+            --start;
+        }
+
+        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
+            ++end;
+        }
+        
+        // run a second pass to trim leading and ending whitespace
+        if (trimWhitespace){
+            while (start < end && isWhitespaceChar(line.charAt(start))) {
+                ++start;
+            }
+
+            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
+                --end;
+            }
+        }
+        
+        return {
+            // TODO: support multi-line values
+            'start': { line: pos.line, ch: start },
+            'end': { line: pos.line, ch: end }
+        }
         
     }
     
@@ -92,7 +147,14 @@ define(function (require, exports, module) {
             // check if the end of the selection is on the property value
             info = CSSUtils.getInfoAtPos(editor, selection.end)
         }
-
+        
+        var range = _getCSSValueRangeAt(selection.start, true);
+        
+        console.log(editor.document.getRange(range.start, range.end))
+        
+        // TODO: fix endless loop because .replaceRange triggers 'cursorActivity'
+        // editor.document.replaceRange("poopysticks", range.start, range.end, "+")
+        
         if (SUPPORTED_PROPS.indexOf(info.name) < 0){
             // not the property we're looking for
             _removeLiveEditor();
@@ -120,7 +182,6 @@ define(function (require, exports, module) {
     // tell the in-page driver to setup an editor with the current model
     function _setupLiveEditor(){
         if (!Inspector.connected()){
-            console.warn('inspector not connected')
             return;
         }
         
