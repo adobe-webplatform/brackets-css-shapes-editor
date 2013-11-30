@@ -42,6 +42,7 @@ define(function (require, exports, module) {
     
     var currentEditor = EditorManager.getActiveEditor();
     
+    // Stores state to sync between code editor and in-browser editor
     var model = new Model({
         'property': null,
         'value': null,
@@ -49,7 +50,10 @@ define(function (require, exports, module) {
     });
     
     model.on('change', function(e){
-        _setupLiveEditor()
+        console.log('MODEL change: ', e);
+        _updateCodeEditor();
+        
+        // _setupLiveEditor()
     })
     
     // some callbacks
@@ -57,8 +61,8 @@ define(function (require, exports, module) {
         
         // clean old hooks
         if(currentEditor) { 
-            $(currentEditor).off("cursorActivity", _selectionChange) 
-            $(currentEditor).off("change", _contentChange) 
+            $(currentEditor).off("cursorActivity", _constructModel) 
+            $(currentEditor).off("change", _constructModel) 
         }
         
         // update the values
@@ -67,8 +71,8 @@ define(function (require, exports, module) {
         
         // add new hooks
         if(currentEditor) { 
-            $(currentEditor).on("cursorActivity", _selectionChange)
-            $(currentEditor).on("change", _contentChange) 
+            $(currentEditor).on("cursorActivity", _constructModel)
+            $(currentEditor).on("change", _constructModel) 
         }
     }
     
@@ -125,59 +129,95 @@ define(function (require, exports, module) {
             'start': { line: pos.line, ch: start },
             'end': { line: pos.line, ch: end }
         }
-        
     }
     
-    var _selectionChange = function(e){
+    /*
+        Constructs the global model with data if the cursor is on a CSS rule 
+        with a property from SUPPORTED_PROPS.
+        
+        Adds attributes to the model:
+        {
+            value: {String},    // the CSS value
+            property: {String}, // the CSS property
+            selector: {String}, // the selector associated with the CSS block
+            range: {Object}     // the range in the code editor for the CSS value
+        }
+        
+        Resets the existing model if:
+            - the cursor is not on a CSS value;
+            - the css property is not supported; @see SUPPORTED_PROPS
+            - a selector cannot be extracted for the CSS block;
+            
+        Model triggers 'change' event if any attribute value has changed since last stored.
+        Does not trigger 'change' event if cursor is just moving inside CSS value.
+        
+        @param {Event} e 'change' or 'cursorActivity' event dispatched by editor
+    */
+    var _constructModel = function(e){
         var editor = e.target,
             doc = editor.document,
             selection = editor.getSelection(),
-            selector, info;
+            info, selector, range;
         
-        // Get the context info at the selection position
+        // Get the CSS rule info at the selection start position
         info = CSSUtils.getInfoAtPos(editor, selection.start);
         
-        // Looking just for the context of a CSS property value
-        if (info.context !== CSSUtils.PROP_VALUE){
-            _removeLiveEditor();
-            return;
-        }
-        
-        if (SUPPORTED_PROPS.indexOf(info.name) < 0){
-            // check if the end of the selection is on the property value
-            info = CSSUtils.getInfoAtPos(editor, selection.end)
-        }
-        
-        var range = _getCSSValueRangeAt(selection.start, true);
-        
-        console.log(editor.document.getRange(range.start, range.end))
-        
-        // TODO: fix endless loop because .replaceRange triggers 'cursorActivity'
-        // editor.document.replaceRange("poopysticks", range.start, range.end, "+")
-        
-        if (SUPPORTED_PROPS.indexOf(info.name) < 0){
-            // not the property we're looking for
-            _removeLiveEditor();
+        if (info.context !== CSSUtils.PROP_VALUE || SUPPORTED_PROPS.indexOf(info.name) < 0){
+            model.reset();
             return;
         }
         
         // TODO: fix CSSUtils.findSelectorAtDocumentPos() because
         // it matches selectors outside <style> when run on single declaration block in <style> element
-        selector = CSSUtils.findSelectorAtDocumentPos(currentEditor, selection.start);
+        selector = CSSUtils.findSelectorAtDocumentPos(editor, selection.start);
         
         if (!selector || typeof selector !== 'string'){
-            _removeLiveEditor();
+            // _removeLiveEditor();
+            model.reset();
             return;
         }
         
-        model.set('selector', selector, true);
-        model.set('property', info.name, true);
-        model.set('value', info.values.join(''), false);
+        range = _getCSSValueRangeAt(selection.start, true);
+        
+        model.set({
+            selector: selector,
+            property: info.name,
+            range: range,
+            /* 
+                Setting value as exact text range;
+                
+                Not using info.values.join('') because it may drop some whitespace
+                from comma-separated values sending _updateCodeEditor() into an
+                endless loop because model.value and document.getRange(model.range)
+                will not be equal
+            */
+            value: editor.document.getRange(range.start, range.end),
+        });
     }
-
-    var _contentChange = function(){
-        // TODO: call .update(model) in driver
+    
+    // use the model to update the Brackets text editor property value
+    function _updateCodeEditor(){
+        var range = model.get('range'),
+            value = model.get('value'),
+            rangeText;
+        
+        if (!range){
+            console.warn('no range')
+            return;
+        }
+        
+        rangeText = currentEditor.document.getRange(range.start, range.end);
+        
+        if (rangeText == value){
+            console.log('current range is current')
+            return;
+        }
+        
+        console.log("replacing range");
+        // replace value in editor; new value in model likey comes from in-browser editor
+        currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
+    
     
     // tell the in-page driver to setup an editor with the current model
     function _setupLiveEditor(){
@@ -192,7 +232,7 @@ define(function (require, exports, module) {
         })
     }
     
-    // update the live editor with the current model
+    // use the model to update the live editor injected in the browser
     function _updateLiveEditor(){}
     
     // turn off any active live editor
