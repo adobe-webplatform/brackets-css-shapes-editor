@@ -49,85 +49,19 @@ define(function (require, exports, module) {
         'selector': null
     });
     
-    model.on('change', function(e){
-        console.log('MODEL change: ', e);
-        _updateCodeEditor();
-        
-        // _setupLiveEditor()
-    })
-    
-    // some callbacks
-    var onEditorChanged = function() {
+    var _onEditorChange = function(){
         
         // clean old hooks
         if(currentEditor) { 
-            $(currentEditor).off("cursorActivity", _constructModel) 
-            $(currentEditor).off("change", _constructModel) 
+            $(currentEditor).off("cursorActivity change", _constructModel) 
         }
         
         // update the values
         currentEditor = EditorManager.getActiveEditor();
-        // resetLivePreview();
         
         // add new hooks
         if(currentEditor) { 
-            $(currentEditor).on("cursorActivity", _constructModel)
-            $(currentEditor).on("change", _constructModel) 
-        }
-    }
-    
-    
-    /*
-        Returns the range that wraps the CSS value at the given pos.
-        Assumes pos is within or adjacent to a CSS value (between : and ; or })
-        
-        @param {!{line:number, ch:number}} pos
-        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
-        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
-    */
-    var _getCSSValueRangeAt = function(pos, trimWhitespace){
-        // TODO support multi-line values
-        var line = currentEditor.document.getLine(pos.line),
-            start = pos.ch,
-            end = pos.ch;
-            
-        // css values start after a colon (:)
-        function isStartBoundaryChar(ch){
-            return (/:/.test(ch));
-        }
-        
-        // css values end before a semicolon (;) or closing bracket (})
-        function isEndBoundaryChar(ch){
-            return (/[;}]/.test(ch));
-        }
-        
-        function isWhitespaceChar(ch){
-            return (/\s/.test(ch));
-        }
-        
-        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
-            --start;
-        }
-
-        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
-            ++end;
-        }
-        
-        // run a second pass to trim leading and ending whitespace
-        if (trimWhitespace){
-            while (start < end && isWhitespaceChar(line.charAt(start))) {
-                ++start;
-            }
-
-            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
-                --end;
-            }
-        }
-        
-        return {
-            // TODO: support multi-line values
-            'start': { line: pos.line, ch: start },
-            'end': { line: pos.line, ch: end }
+            $(currentEditor).on("cursorActivity change", _constructModel)
         }
     }
     
@@ -195,6 +129,62 @@ define(function (require, exports, module) {
         });
     }
     
+    /*
+        Returns the range that wraps the CSS value at the given pos.
+        Assumes pos is within or adjacent to a CSS value (between : and ; or })
+        
+        @param {!{line:number, ch:number}} pos
+        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
+        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
+    */
+    var _getCSSValueRangeAt = function(pos, trimWhitespace){
+        // TODO support multi-line values
+        var line = currentEditor.document.getLine(pos.line),
+            start = pos.ch,
+            end = pos.ch;
+            
+        // css values start after a colon (:)
+        function isStartBoundaryChar(ch){
+            return (/:/.test(ch));
+        }
+        
+        // css values end before a semicolon (;) or closing bracket (})
+        function isEndBoundaryChar(ch){
+            return (/[;}]/.test(ch));
+        }
+        
+        function isWhitespaceChar(ch){
+            return (/\s/.test(ch));
+        }
+        
+        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
+            --start;
+        }
+
+        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
+            ++end;
+        }
+        
+        // run a second pass to trim leading and ending whitespace
+        if (trimWhitespace){
+            while (start < end && isWhitespaceChar(line.charAt(start))) {
+                ++start;
+            }
+
+            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
+                --end;
+            }
+        }
+        
+        return {
+            // TODO: support multi-line values
+            'start': { line: pos.line, ch: start },
+            'end': { line: pos.line, ch: end }
+        }
+    }
+    
+
+    
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor(){
         var range = model.get('range'),
@@ -249,8 +239,12 @@ define(function (require, exports, module) {
         })
     }
     
-    // syncs current model with that of the live editor
-    function _syncWithLiveEditor(){}
+    // syncs local model with the model of the in-browser editor
+    function _syncWithLiveEditorModel(){
+        // TODO: setup polling interval
+        // TODO: get promise for remote model
+        // TODO: then update local model
+    }
     
     function _injectLiveEditorDriver(){
         var script = [EditorDriver, CSSShapesEditor, CSSShapesEditorProvider].join(';');
@@ -258,16 +252,21 @@ define(function (require, exports, module) {
             console.log('injet', e)
         })
     } 
-        
-    // load those scripts into the page
-    function onStatusChange(event, status) {
+    
+    // TODO: delay inject editor until a supported property is first focused
+    function _onStatusChange(event, status) {
         if (status >= LiveDevelopment.STATUS_ACTIVE) {
             _injectLiveEditorDriver();
         }
     }
     
-    $(LiveDevelopment).on("statusChange", onStatusChange);
-    $(EditorManager).on("activeEditorChange", onEditorChanged);
-    onEditorChanged();
+    model.on('change', function(e){
+        console.log('MODEL change: ', e);
+        _updateCodeEditor();
+        
+        // _setupLiveEditor()
+    });
     
+    $(LiveDevelopment).on("statusChange", _onStatusChange);
+    $(EditorManager).on("activeEditorChange", _onEditorChange);
 });
