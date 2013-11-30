@@ -25,6 +25,8 @@
 
 define(function (require, exports, module){
     "use strict";
+    
+    var _ = brackets.getModule("thirdparty/lodash");
 
     function Model(properties){
 
@@ -47,19 +49,29 @@ define(function (require, exports, module){
 
         return {
             set: function(key, value, silent){
-
+                var hasChanged = false;
+                
+                // 2-arguments notation: hash with attributes and optional boolean
                 if (typeof key === 'object' && arguments.length < 3){
+
                     for (var k in key){
-                        _props[k] = key[k];
+                        if (!_.isEqual(_props[k], key[k])){
+                            _props[k] = key[k];
+                            hasChanged = true;
+                        }
                     }
-
-                    silent = arguments[1] || false
+                    silent = arguments[1] || false;
                 }
+                // 3-arguments notation: key, value and optional boolean
                 else{
-    	            _props[key] = value;
+                    
+                    if (!_.isEqual(_props[k], key[k])){
+                        _props[key] = value;
+                        hasChanged = true;
+                    }
                 }
-
-                if (!silent){
+                
+                if (silent !== true && hasChanged){
                     _trigger('change', _props);
                 }
             },
