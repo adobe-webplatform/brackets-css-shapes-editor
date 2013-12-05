@@ -106,15 +106,17 @@ define(function (require, exports, module) {
         var expr = _namespace + '.remove()';
         
         console.log('REMOVE');
-        return _call(expr)
-            .then(_stopSyncLoop)
-            .then(function(){
-                var deferred = $.Deferred();
-                _hasEditor = false;
-                _model = {};
-                
-                return deferred.resolve();
-            });
+        return _call(expr).then(_stopSyncLoop).then(_reset);
+    }
+    
+    function _reset(){
+        var deferred = $.Deferred();
+        
+        _hasEditor = false;
+        _model = {};
+        
+        // allow promise chaining
+        return deferred.resolve();
     }
     
     function _startSyncLoop(){
@@ -131,7 +133,6 @@ define(function (require, exports, module) {
         console.log('STOP SYNC');
         clearInterval(_syncInterval);
         
-        // allow promise chaining
         return deferred.resolve();
     }
     
