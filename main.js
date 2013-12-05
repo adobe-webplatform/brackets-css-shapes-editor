@@ -79,6 +79,7 @@ define(function (require, exports, module) {
         
         // Get the CSS rule info at the selection start position
         info = CSSUtils.getInfoAtPos(editor, selection.start);
+        
         if (info.context !== CSSUtils.PROP_VALUE || (SUPPORTED_PROPS.indexOf(info.name) < 0)){
             model.reset();
             return;
@@ -148,7 +149,7 @@ define(function (require, exports, module) {
             ++end;
         }
         
-        // run a second pass to trim leading and ending whitespace
+        // run a second pass to trim leading and trailing whitespace
         if (trimWhitespace){
             while (start < end && isWhitespaceChar(line.charAt(start))) {
                 ++start;
@@ -190,18 +191,15 @@ define(function (require, exports, module) {
         currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
     
-    function _onEditorChange(){
+    function _onActiveEditorChange(){
         
-        // clean old hooks
-        if(currentEditor) { 
-            $(currentEditor).off("cursorActivity change", _constructModel) 
+        if (currentEditor){
+            $(currentEditor).off("cursorActivity change", _constructModel)
         }
         
-        // update the values
         currentEditor = EditorManager.getActiveEditor();
         
-        // add new hooks
-        if(currentEditor) { 
+        if (currentEditor){ 
             $(currentEditor).on("cursorActivity change", _constructModel)
         }
     }
@@ -231,5 +229,5 @@ define(function (require, exports, module) {
     })
     
     $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);
-    $(EditorManager).on("activeEditorChange", _onEditorChange);
+    $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
 });
