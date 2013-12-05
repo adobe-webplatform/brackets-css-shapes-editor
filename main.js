@@ -31,10 +31,10 @@ define(function (require, exports, module) {
         CSSUtils            = brackets.getModule("language/CSSUtils"),
         LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
         Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
-        Model               = require("Model");
+        Model               = require("Model"),
+        LiveEditorDriver    = require("LiveEditorLocalDriver");
         
-    var EditorDriver            = require('text!EditorDriver.js'),
-        CSSShapesEditor         = require('text!lib/CSSShapesEditor.js'),
+    var CSSShapesEditor         = require('text!lib/CSSShapesEditor.js'),
         CSSShapesEditorProvider = require('text!lib/CSSShapesEditorProvider.js');
         
     // Update this if you add editor providers for new properties
@@ -48,22 +48,6 @@ define(function (require, exports, module) {
         'value': null,
         'selector': null
     });
-    
-    var _onEditorChange = function(){
-        
-        // clean old hooks
-        if(currentEditor) { 
-            $(currentEditor).off("cursorActivity change", _constructModel) 
-        }
-        
-        // update the values
-        currentEditor = EditorManager.getActiveEditor();
-        
-        // add new hooks
-        if(currentEditor) { 
-            $(currentEditor).on("cursorActivity change", _constructModel)
-        }
-    }
     
     /*
         Constructs the global model with data if the cursor is on a CSS rule 
@@ -87,7 +71,7 @@ define(function (require, exports, module) {
         
         @param {Event} e 'change' or 'cursorActivity' event dispatched by editor
     */
-    var _constructModel = function(e){
+    function _constructModel(e){
         var editor = e.target,
             doc = editor.document,
             selection = editor.getSelection(),
@@ -95,8 +79,7 @@ define(function (require, exports, module) {
         
         // Get the CSS rule info at the selection start position
         info = CSSUtils.getInfoAtPos(editor, selection.start);
-        
-        if (info.context !== CSSUtils.PROP_VALUE || SUPPORTED_PROPS.indexOf(info.name) < 0){
+        if (info.context !== CSSUtils.PROP_VALUE || (SUPPORTED_PROPS.indexOf(info.name) < 0)){
             model.reset();
             return;
         }
@@ -137,7 +120,7 @@ define(function (require, exports, module) {
         @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
         @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
-    var _getCSSValueRangeAt = function(pos, trimWhitespace){
+    function _getCSSValueRangeAt(pos, trimWhitespace){
         // TODO support multi-line values
         var line = currentEditor.document.getLine(pos.line),
             start = pos.ch,
@@ -183,7 +166,6 @@ define(function (require, exports, module) {
         }
     }
     
-
     
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor(){
@@ -192,81 +174,62 @@ define(function (require, exports, module) {
             rangeText;
         
         if (!range){
-            console.warn('no range')
+            // console.warn('no range')
             return;
         }
         
         rangeText = currentEditor.document.getRange(range.start, range.end);
         
         if (rangeText == value){
-            console.log('current range is current')
+            // console.log('current range is current')
             return;
         }
         
-        console.log("replacing range");
+        // console.log("replacing range");
         // replace value in editor; new value in model likey comes from in-browser editor
         currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
     
-    
-    // tell the in-page driver to setup an editor with the current model
-    function _setupLiveEditor(){
-        if (!Inspector.connected()){
-            return;
+    function _onEditorChange(){
+        
+        // clean old hooks
+        if(currentEditor) { 
+            $(currentEditor).off("cursorActivity change", _constructModel) 
         }
         
-        var expr = '_LD_CSS_EDITOR.setup('+ JSON.stringify(model.attributes) +')';
+        // update the values
+        currentEditor = EditorManager.getActiveEditor();
         
-        return Inspector.Runtime.evaluate(expr, function(e){
-            console.log('setup', e)
-        })
-    }
-    
-    // use the model to update the live editor injected in the browser
-    function _updateLiveEditor(){}
-    
-    // turn off any active live editor
-    function _removeLiveEditor(){
-        if (!Inspector.connected()){
-            console.warn('inspector not connected')
-            return;
+        // add new hooks
+        if(currentEditor) { 
+            $(currentEditor).on("cursorActivity change", _constructModel)
         }
-        
-        var expr = '_LD_CSS_EDITOR.remove()';
-        
-        return Inspector.Runtime.evaluate(expr, function(e){
-            console.log('remove', e)
-        })
     }
-    
-    // syncs local model with the model of the in-browser editor
-    function _syncWithLiveEditorModel(){
-        // TODO: setup polling interval
-        // TODO: get promise for remote model
-        // TODO: then update local model
-    }
-    
-    function _injectLiveEditorDriver(){
-        var script = [EditorDriver, CSSShapesEditor, CSSShapesEditorProvider].join(';');
-        return Inspector.Runtime.evaluate(script, function(e){
-            console.log('injet', e)
-        })
-    } 
     
     // TODO: delay inject editor until a supported property is first focused
-    function _onStatusChange(event, status) {
+    function _onLiveDevelopmentStatusChange(event, status) {
         if (status >= LiveDevelopment.STATUS_ACTIVE) {
-            _injectLiveEditorDriver();
+            var providers = [CSSShapesEditor, CSSShapesEditorProvider];
+            LiveEditorDriver.init(providers);
         }
     }
     
     model.on('change', function(e){
-        console.log('MODEL change: ', e);
+        
         _updateCodeEditor();
         
-        // _setupLiveEditor()
+        if (!model.get('property')){
+            LiveEditorDriver.remove();
+        }
+        else{
+            LiveEditorDriver.update(model);
+        }
     });
     
-    $(LiveDevelopment).on("statusChange", _onStatusChange);
+    $(LiveEditorDriver).on('modelChange', function(e, data){
+        console.log('I have a remote model change!', e, data)
+    })
+    
+    $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);
     $(EditorManager).on("activeEditorChange", _onEditorChange);
 });
