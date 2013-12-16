@@ -63,7 +63,11 @@ define(function (require, exports, module) {
     }
     
     function _setup(model){
-        var attr = model.attributes;
+        var attr = {
+            selector: model.get('selector'),
+            value: model.get('value'),
+            property: model.get('property')
+        }
         
         if (_hasEditor){
             // are we being asked to re-setup the same editor? update the existing one;
@@ -72,8 +76,8 @@ define(function (require, exports, module) {
             }
         }
         
-        console.log('SETUP', model.attributes.selector);
-        var expr = _namespace + '.setup('+ JSON.stringify(model.attributes) +')';
+        console.log('SETUP', attr.selector);
+        var expr = _namespace + '.setup('+ JSON.stringify(attr) +')';
         
         return _call(expr)
             .then(_startSyncLoop)
@@ -81,15 +85,19 @@ define(function (require, exports, module) {
     }
     
     function _update(model){
-        if (!model || !model.attributes){
+        if (!model){
             throw new TypeError('Invalid _update() input. Expected {Model} instance, got: ' + model);
+        }
+        
+        var attr = {
+            selector: model.get('selector'),
+            value: model.get('value'),
+            property: model.get('property')
         }
         
         if (!_hasEditor){
             return _setup(model);
         }
-        
-        var attr = model.attributes;
         
         // are we updating the editor for the element & property we know?
         if (attr.selector !== _model.selector || attr.property !== _model.property){
@@ -97,8 +105,8 @@ define(function (require, exports, module) {
             return _remove().then( function(){ return _setup(model) } );
         }
         
-        console.log('UPDATE', model.attributes.selector);
-        var expr = _namespace + '.update('+ JSON.stringify(model.attributes) +')';
+        console.log('UPDATE', attr.selector);
+        var expr = _namespace + '.update('+ JSON.stringify(attr) +')';
         return _call(expr);
     }
     
@@ -142,10 +150,25 @@ define(function (require, exports, module) {
         _call(expr).then(_updateModel)
     }
     
-    function _updateModel(model){
-        // TODO: compare local model with remote model and trigger change if they differ
-        $(exports).triggerHandler('modelChange', model)
-        console.log('trigger model change')
+    function _updateModel(resp){
+        if (!resp.result || !resp.result.value || typeof resp.result.value !== 'string'){
+            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + resp.result);
+        }
+        
+        var data = JSON.parse(resp.result.value),
+            hasChanged = false;
+            
+        for (var key in data){
+            if (!_model[key] || !_.isEqual(_model[key], data[key])){
+                _model[key] = data[key];
+                hasChanged = true;
+            }
+        }
+        
+        if (hasChanged){
+            console.warn('MODEL DIFFERS', _model)
+            $(exports).triggerHandler('modelChange', _model);
+        }
     }
     
     /*

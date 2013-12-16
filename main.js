@@ -96,7 +96,6 @@ define(function (require, exports, module) {
         }
         
         range = _getCSSValueRangeAt(selection.start, true);
-        
         model.set({
             selector: selector,
             property: info.name,
@@ -186,9 +185,23 @@ define(function (require, exports, module) {
             return;
         }
         
-        // console.log("replacing range");
+        console.log("replacing range");
         // replace value in editor; new value in model likey comes from in-browser editor
         currentEditor.document.replaceRange(value, range.start, range.end, "+");
+    }
+    
+    // use the model to update the in-browser editor
+    function _updateLiveEditor(){
+        var property = model.get('property'),
+            value = model.get('value'),
+            selector = model.get('selector')
+            
+        if (property){
+            LiveEditorDriver.update(model);
+        }
+        else{
+            LiveEditorDriver.remove();
+        }
     }
     
     function _onActiveEditorChange(){
@@ -213,19 +226,13 @@ define(function (require, exports, module) {
     }
     
     model.on('change', function(e){
-        
         _updateCodeEditor();
-        
-        if (!model.get('property')){
-            LiveEditorDriver.remove();
-        }
-        else{
-            LiveEditorDriver.update(model);
-        }
+        _updateLiveEditor();
     });
     
     $(LiveEditorDriver).on('modelChange', function(e, data){
         console.log('I have a remote model change!', e, data)
+        model.set(data)
     })
     
     $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);

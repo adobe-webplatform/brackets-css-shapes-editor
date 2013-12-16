@@ -112,7 +112,7 @@
     }
     
     function _getModel(){
-        return _model;
+        return JSON.stringify(_model);
     }
     
     /*
