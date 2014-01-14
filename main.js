@@ -217,12 +217,13 @@ define(function (require, exports, module) {
         }
     }
     
-    // TODO: delay inject editor until a supported property is first focused
     // TODO: listen for refresh in live editor. re-init the remote driver.
     function _onLiveDevelopmentStatusChange(event, status) {
         if (status >= LiveDevelopment.STATUS_ACTIVE) {
-            var providers = [CSSShapesEditor, CSSShapesEditorProvider];
-            LiveEditorDriver.init(providers);
+            
+            // dependencies as strings; to be inserted in the inspected page;
+            var deps = [CSSShapesEditor, CSSShapesEditorProvider];
+            LiveEditorDriver.init(deps);
         }
     }
     
