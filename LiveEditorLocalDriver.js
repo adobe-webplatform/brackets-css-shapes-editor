@@ -26,8 +26,7 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
-        Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
+    var Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
         _                   = brackets.getModule("thirdparty/lodash");
         
     var LiveEditorRemoteDriver = require('text!LiveEditorRemoteDriver.js'),
