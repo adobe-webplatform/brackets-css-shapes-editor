@@ -192,9 +192,7 @@ define(function (require, exports, module) {
     
     // use the model to update the in-browser editor
     function _updateLiveEditor(){
-        var property = model.get('property'),
-            value = model.get('value'),
-            selector = model.get('selector')
+        var property = model.get('property');
             
         if (property){
             LiveEditorDriver.update(model);
@@ -217,7 +215,6 @@ define(function (require, exports, module) {
         }
     }
     
-    // TODO: listen for refresh in live editor. re-init the remote driver.
     function _onLiveDevelopmentStatusChange(event, status) {
         if (status >= LiveDevelopment.STATUS_ACTIVE) {
             

@@ -155,7 +155,7 @@ define(function (require, exports, module) {
             return _remove().then( function(){ return _setup(model) } );
         }
         
-        console.log('UPDATE', attr.selector);
+        // console.log('UPDATE', attr.selector, JSON.stringify(attr));
         var expr = _namespace + '.update('+ JSON.stringify(attr) +')';
         return _call(expr)
             .fail(_reconnect)
