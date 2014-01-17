@@ -94,6 +94,10 @@
         // update the selector target's style
         _target.style[_model.property] = value;
         
+        // remove the polygon fill-rule until CSSUtils.getInfoAtPos() is fixed
+        // @see https://github.com/adobe/brackets/pull/6568
+        value = /^polygon/.test(value) ? value.replace(/nonzero,\s*/, '') : value;
+        
         // update the model. will be requested by Brackets to sync code editor
         _model.value = value;
     }
