@@ -112,12 +112,10 @@ define(function (require, exports, module) {
             }
         }
         
-        console.log('SETUP', attr.selector);
+        console.log('SETUP', attr.selector, model.get('value'));
         var expr = _namespace + '.setup('+ JSON.stringify(attr) +')';
         
         return _call(expr)
-            .fail(_reconnect)
-            .then(_call(expr))
             .then(_startSyncLoop)
             .then( function(){ _hasEditor = true} );
     }
@@ -152,14 +150,13 @@ define(function (require, exports, module) {
         // are we updating the editor for the element & property we know?
         if (attr.selector !== _model.selector || attr.property !== _model.property){
             console.warn('Updating for a different editor');
+            // _model = JSON.parse(JSON.stringify(attr));
             return _remove().then( function(){ return _setup(model) } );
         }
         
-        // console.log('UPDATE', attr.selector, JSON.stringify(attr));
+        console.log('UPDATE', attr.selector, JSON.stringify(attr));
         var expr = _namespace + '.update('+ JSON.stringify(attr) +')';
-        return _call(expr)
-            .fail(_reconnect)
-            .then(_call(expr));
+        return _call(expr);
     }
     
     /*
@@ -187,17 +184,17 @@ define(function (require, exports, module) {
     }
     
     function _startSyncLoop(){
-        _syncInterval = setInterval(_onSyncTick, _syncFrequency);
+        _syncInterval = window.setInterval(_onSyncTick, _syncFrequency);
     }
     
     function _stopSyncLoop(){
-        clearInterval(_syncInterval);
+        window.clearInterval(_syncInterval);
     }
     
     function _onSyncTick(){
         console.log('SYNC');
         var expr = _namespace + '.getModel()';
-        _call(expr).fail(_reconnect).then(expr).then(_onGetRemoteModel);
+        _call(expr).then(_onGetRemoteModel);
     }
     
     /*
@@ -234,7 +231,7 @@ define(function (require, exports, module) {
         
         var data = JSON.parse(resp.result.value),
             hasChanged = false;
-        
+            
         // sync the local model with the remote model
         for (var key in data){
             if (!_model[key] || !_.isEqual(_model[key], data[key])){

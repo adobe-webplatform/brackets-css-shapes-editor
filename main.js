@@ -174,14 +174,12 @@ define(function (require, exports, module) {
             rangeText;
         
         if (!range){
-            // console.warn('no range')
             return;
         }
         
         rangeText = currentEditor.document.getRange(range.start, range.end);
         
         if (rangeText == value){
-            // console.log('current range is current')
             return;
         }
         
@@ -218,9 +216,17 @@ define(function (require, exports, module) {
     function _onLiveDevelopmentStatusChange(event, status) {
         if (status >= LiveDevelopment.STATUS_ACTIVE) {
             
-            // dependencies as strings; to be inserted in the inspected page;
+            // dependencies as strings; to be injected in the live preview page
             var deps = [CSSShapesEditor, CSSShapesEditorProvider];
-            LiveEditorDriver.init(deps);
+            
+            LiveEditorDriver.init(deps)
+                .then(function(){
+                    // if there's a suitable model when turning on live dev,
+                    // also setup the editor in the live preview.
+                    if (model.get('property')){
+                        LiveEditorDriver.setup(model)
+                    }
+                });
         }
     }
     
@@ -230,7 +236,6 @@ define(function (require, exports, module) {
     });
     
     $(LiveEditorDriver).on('modelChange', function(e, data){
-        console.log('I have a remote model change!', e, data)
         model.set(data)
     })
     
