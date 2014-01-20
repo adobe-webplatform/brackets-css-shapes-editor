@@ -165,20 +165,20 @@ define(function (require, exports, module) {
         @return {Object/Promise}
     */
     function _remove(){
-        var expr = _namespace + '.remove()';
-        
         if (!_hasEditor){
             return;
         }
         
         console.log('REMOVE');
-        return _call(expr).then(_stopSyncLoop).then(_reset);
+        var expr = _namespace + '.remove()';
+        return _call(expr).then(_reset);
     }
     
     /*
         Reset flags and clear snapshot of remote model
     */
     function _reset(){
+        _stopSyncLoop();
         _hasEditor = false;
         _model = {};
     }
@@ -211,6 +211,7 @@ define(function (require, exports, module) {
     function _reconnect(){
         var deferred = $.Deferred();
         var onPostInit = function(){
+            _reset();
             _setup(_cache.model); 
             _retryCount = 5; 
         }
@@ -255,9 +256,6 @@ define(function (require, exports, module) {
         
         // cache dependencies for reuse when a re-init is required (ex: after a page refresh)
         _cache.dependencies = scripts;
-        
-        _stopSyncLoop();
-        _reset();
         
         $(exports).triggerHandler('init');
         

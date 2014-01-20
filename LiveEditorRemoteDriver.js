@@ -73,13 +73,13 @@
         }
         
         // reset everything
-        _remove();
+        // _remove();
         
         // store the data from Brackets editor
         _model = model;
         
         // get an editor that can handle the property
-        _activeEditor = _providers[model.property];
+        _activeEditor = new _providers[model.property];
         _activeEditor.setup(_target, model);
         
         // sync the element's style and the model value
