@@ -236,6 +236,20 @@ define(function (require, exports, module) {
     });
     
     $(LiveEditorDriver).on('modelChange', function(e, data){
+        
+        /*  
+            If the user is still typing in the code editor, refuse to update the model 
+            (and then the code editor) as a result of the live editor's state change.
+            
+            If the code editor is focused, the live editor in live preview cannot also be focused;
+            state updates coming from there are just recent updates from the code editor.
+            
+            Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
+        */
+        if (EditorManager.getFocusedEditor()){
+            return;
+        }
+        
         model.set(data)
     })
     
