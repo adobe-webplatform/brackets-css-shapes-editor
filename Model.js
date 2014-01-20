@@ -35,10 +35,10 @@ define(function (require, exports, module){
         }
         
         var _initial = properties || {},
-            _props = properties || {},
+            _props = {},
             _events = {};
             
-        var _trigger = function(eventName, details){
+        function _trigger(eventName, details){
             var callbacks = _events[eventName];
             if (callbacks.length){
                 callbacks.forEach(function(cb){
@@ -46,36 +46,42 @@ define(function (require, exports, module){
                 })
             }
         };
+        
+        function _set(key, value, silent){
+            var hasChanged = false;
+            
+            // 2-arguments notation: hash with attributes and optional boolean
+            if (typeof key === 'object' && arguments.length < 3){
 
-        return {
-            set: function(key, value, silent){
-                var hasChanged = false;
-                
-                // 2-arguments notation: hash with attributes and optional boolean
-                if (typeof key === 'object' && arguments.length < 3){
-
-                    for (var k in key){
-                        if (!_.isEqual(_props[k], key[k])){
-                            _props[k] = key[k];
-                            hasChanged = true;
-                        }
-                    }
-                    silent = arguments[1] || false;
-                }
-                // 3-arguments notation: key, value and optional boolean
-                else{
-                    
+                for (var k in key){
                     if (!_.isEqual(_props[k], key[k])){
-                        _props[key] = value;
+                        _props[k] = key[k];
                         hasChanged = true;
                     }
                 }
+                silent = arguments[1] || false;
+            }
+            // 3-arguments notation: key, value and optional boolean
+            else{
                 
-                if (silent !== true && hasChanged){
-                    _trigger('change', _props);
+                if (!_.isEqual(_props[k], key[k])){
+                    _props[key] = value;
+                    hasChanged = true;
                 }
-            },
-
+            }
+            
+            if (silent !== true && hasChanged){
+                _trigger('change', _props);
+            }
+        }
+        
+        if (typeof properties == 'object'){ 
+            _set(properties, true)
+        }
+        
+        return {
+            set: _set,
+            
             get: function(key){
                 return _props[key];
             },
