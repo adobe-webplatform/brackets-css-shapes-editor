@@ -40,7 +40,8 @@ define(function (require, exports, module) {
     // Update this if you add editor providers for new properties
     var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
     
-    var currentEditor = EditorManager.getActiveEditor();
+    var currentEditor = EditorManager.getActiveEditor(),
+        _isLiveDevelopmentOn = false;
     
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
@@ -90,7 +91,6 @@ define(function (require, exports, module) {
         selector = CSSUtils.findSelectorAtDocumentPos(editor, selection.start);
         
         if (!selector || typeof selector !== 'string'){
-            // _removeLiveEditor();
             model.reset();
             return;
         }
@@ -183,19 +183,23 @@ define(function (require, exports, module) {
             return;
         }
         
-        console.log("replacing range");
         // replace value in editor; new value in model likey comes from in-browser editor
         currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
     
     // use the model to update the in-browser editor
     function _updateLiveEditor(){
+        
+        if (_isLiveDevelopmentOn !== true){
+            return
+        }
+        
         var property = model.get('property');
             
         if (property){
             LiveEditorDriver.update(model);
         }
-        else{
+        else{ 
             LiveEditorDriver.remove();
         }
     }
@@ -214,7 +218,12 @@ define(function (require, exports, module) {
     }
     
     function _onLiveDevelopmentStatusChange(event, status) {
-        if (status >= LiveDevelopment.STATUS_ACTIVE) {
+        
+        _isLiveDevelopmentOn = false;
+        
+        if (status >= LiveDevelopment.STATUS_ACTIVE) { 
+            
+            _isLiveDevelopmentOn = true
             
             // dependencies as strings; to be injected in the live preview page
             var deps = [CSSShapesEditor, CSSShapesEditorProvider];
