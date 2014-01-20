@@ -221,8 +221,8 @@ define(function (require, exports, module) {
             
             LiveEditorDriver.init(deps)
                 .then(function(){
-                    // if there's a suitable model when turning on live dev,
-                    // also setup the editor in the live preview.
+                    // if the cursor is on an editable shape property when turning on live preview,
+                    // also setup an appropriate editor.
                     if (model.get('property')){
                         LiveEditorDriver.setup(model)
                     }
