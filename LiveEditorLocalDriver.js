@@ -66,7 +66,7 @@ define(function (require, exports, module) {
             throw new TypeError('Invalid _call() input. Expected string, got: ' + typeof expression);
         }
         
-        if (!Inspector.connected()){
+        if (Inspector.connected() !== true){
             return deferred.reject();
         }
         
@@ -135,7 +135,7 @@ define(function (require, exports, module) {
             throw new TypeError('Invalid _update() input. Expected {Model} instance, got: ' + model);
         }
         
-        if (!_hasEditor){
+        if (_hasEditor === false){
             return _setup(model);
         }   
         
@@ -165,13 +165,15 @@ define(function (require, exports, module) {
         @return {Object/Promise}
     */
     function _remove(){
-        if (!_hasEditor){
+        if (_hasEditor === false){
             return;
         }
         
         console.log('REMOVE');
+        
+        _reset();
         var expr = _namespace + '.remove()';
-        return _call(expr).then(_reset);
+        return _call(expr);
     }
     
     /*

@@ -40,8 +40,7 @@ define(function (require, exports, module) {
     // Update this if you add editor providers for new properties
     var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
     
-    var currentEditor = EditorManager.getActiveEditor(),
-        _isLiveDevelopmentOn = false;
+    var currentEditor = EditorManager.getActiveEditor();
     
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
@@ -189,8 +188,7 @@ define(function (require, exports, module) {
     
     // use the model to update the in-browser editor
     function _updateLiveEditor(){
-        
-        if (_isLiveDevelopmentOn !== true){
+        if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE){
             return
         }
         
@@ -218,24 +216,26 @@ define(function (require, exports, module) {
     }
     
     function _onLiveDevelopmentStatusChange(event, status) {
-        
-        _isLiveDevelopmentOn = false;
-        
-        if (status >= LiveDevelopment.STATUS_ACTIVE) { 
+
+        switch (status){
             
-            _isLiveDevelopmentOn = true
+            case LiveDevelopment.STATUS_INACTIVE:
+                LiveEditorDriver.remove();
+            break;
             
-            // dependencies as strings; to be injected in the live preview page
-            var deps = [CSSShapesEditor, CSSShapesEditorProvider];
-            
-            LiveEditorDriver.init(deps)
-                .then(function(){
-                    // if the cursor is on an editable shape property when turning on live preview,
-                    // also setup an appropriate editor.
-                    if (model.get('property')){
-                        LiveEditorDriver.setup(model)
-                    }
-                });
+            case LiveDevelopment.STATUS_ACTIVE:
+                // dependencies as strings; to be injected in the live preview page
+                var deps = [CSSShapesEditor, CSSShapesEditorProvider];
+
+                LiveEditorDriver.init(deps)
+                    .then(function(){
+                        // if the cursor is on an editable shape property when turning on live preview,
+                        // also setup an appropriate editor.
+                        if (model.get('property')){
+                            LiveEditorDriver.setup(model)
+                        }
+                    });
+            break;
         }
     }
     
