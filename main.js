@@ -244,7 +244,7 @@ define(function (require, exports, module) {
         _updateLiveEditor();
     });
     
-    $(LiveEditorDriver).on('modelChange', function(e, data){
+    $(LiveEditorDriver).on('modelChange', function(e, data, force){
         
         /*  
             If the user is still typing in the code editor, refuse to update the model 
@@ -254,8 +254,12 @@ define(function (require, exports, module) {
             state updates coming from there are just recent updates from the code editor.
             
             Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
+            
+            ---
+            
+            If there is a request to force a model update, circumvent this.
         */
-        if (EditorManager.getFocusedEditor()){
+        if (EditorManager.getFocusedEditor() && !force){
             return;
         }
         

@@ -35,7 +35,9 @@
             Will be synced to Brackets via _getModel() to update text in code editor.
             @example {selector: 'body', property: 'shape-inside', value: 'circle()' }
         */
-        _model = null;
+        _model = null,
+        // regular expression for shape values with no coordinates
+        _emptyShapeRE = /[polygon|circle|rectangle|ellipse]\(\s*\)/i;
     
     /*
         Setup an editor for a specific CSS property of an element using data in model.
@@ -78,6 +80,8 @@
         // store the data from Brackets editor
         _model = model;
         
+        _model.forceUpdate = _emptyShapeRE.test(_model.value);
+        
         // get an editor that can handle the property
         _activeEditor = new _providers[model.property];
         _activeEditor.setup(_target, model);
@@ -97,6 +101,16 @@
         // remove the polygon fill-rule until CSSUtils.getInfoAtPos() is fixed
         // @see https://github.com/adobe/brackets/pull/6568
         value = /^polygon/.test(value) ? value.replace(/nonzero,\s*/, '') : value;
+        
+        /* 
+           If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
+           the CSSShapesEditor will automatically infer coordintates from the element and return a usable shape value.
+           
+           Here, we set a flag to force the code editor to accept this inferred default shape value.
+           The code editor is set to ignore shape values from the live editor, if the user is still typing.
+           Setting this flag to true circumvents that behavior.
+        */
+        _model.forceUpdate = _emptyShapeRE.test(_model.value);
         
         // update the model. will be requested by Brackets to sync code editor
         _model.value = value;

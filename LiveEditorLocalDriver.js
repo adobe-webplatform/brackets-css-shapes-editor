@@ -41,7 +41,7 @@ define(function (require, exports, module) {
         _hasEditor = false,
         
         // milliseconds interval after which to sync the remote model with the local model snapshot
-        _syncFrequency = 500,
+        _syncFrequency = 100,
         
         // result of setInterval()
         _syncInterval,
@@ -198,12 +198,12 @@ define(function (require, exports, module) {
         _call(expr).then(_whenGetRemoteModel).fail(_whenRemoteCallFailed);
     }
     
-    function _whenGetRemoteModel(model){
-        if (!model || !model.value || typeof model.value !== 'string'){
+    function _whenGetRemoteModel(response){
+        if (!response || !response.value || typeof response.value !== 'string'){
             throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + model);
         }
         
-        var data = JSON.parse(model.value),
+        var data = JSON.parse(response.value),
             hasChanged = false;
             
         // sync the local model snapshot with the remote model
@@ -214,9 +214,10 @@ define(function (require, exports, module) {
             }
         }
         
+        
         // notify Brackets so it can update the code editor
-        if (hasChanged){
-            $(exports).triggerHandler('modelChange', _model);
+        if (hasChanged || data.forceUpdate){
+            $(exports).triggerHandler('modelChange', [_model, data.forceUpdate]);
         }
     }
     
