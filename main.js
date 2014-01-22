@@ -270,4 +270,9 @@ define(function (require, exports, module) {
     
     $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);
     $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
+    
+    // for testing only
+    exports.model = model;
+    exports._constructModel = _constructModel;
+    exports._getCSSValueRangeAt = _getCSSValueRangeAt;
 });
