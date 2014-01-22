@@ -26,7 +26,7 @@
         // @see _registerProvider()
     var _providers = {},
         // current active editor for model.property
-        _activeEditor = null,
+        _activeEditor,
         // element matched by model.selector
         _target = null,
         /* 
@@ -105,7 +105,7 @@
     function _remove(){
         if (_activeEditor){
             _activeEditor.remove();
-            _activeEditor = null;
+            _activeEditor = undefined;
         }
         
         _model = null;

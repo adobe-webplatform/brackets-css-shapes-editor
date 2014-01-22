@@ -72,6 +72,7 @@ define(function (require, exports, module) {
         
         Inspector.Runtime.evaluate(expression, function(resp){
             if (!resp || resp.wasThrown){
+                console.error(resp.result)
                 deferred.reject(resp.result);
             }
             else{
@@ -226,6 +227,10 @@ define(function (require, exports, module) {
     function _whenRemoteCallFailed(result){
         if (result && result.description && /Cannot call method/.test(result.description)){
             return _reconnect();
+        }
+        else{
+            _cache.model = undefined;
+            return _remove();
         }
     }
     
