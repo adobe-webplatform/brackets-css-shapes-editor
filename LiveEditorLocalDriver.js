@@ -31,27 +31,27 @@ define(function (require, exports, module) {
         
     var LiveEditorRemoteDriver = require('text!LiveEditorRemoteDriver.js'),
         
-        // namspace where live editor properties live
+        // namspace in the inspected page where live editor methods live
         _namespace = 'window._LD_CSS_EDITOR',
         
-        // snapshot of remote model from live editor in the live preview (inspected page)
+        // snapshot of remote model from live editor in the inspected page (live preivew)
         _model = {},
         
-        // flag set to true if live editor has been injected
+        // true if live editor instance was set up
         _hasEditor = false,
         
-        // ms interval after which to sync the remote model with the local model
+        // milliseconds interval after which to sync the remote model with the local model snapshot
         _syncFrequency = 500,
         
         // result of setInterval()
         _syncInterval,
         
-        // number of attepts to reconnect after an error or live preview window refresh
+        // number of attepts to reconnect after an error
         _retryCount = 5,
         
-        // misc storage; used in reconnect scenarios.
+        // misc storage; used in reconnect scenario
         _cache = {};
-    
+        
     /*
         Evaluate the given expression in the context of the live preview page.
         Returns a promise. Fails the promise if the inspector is not connected.
@@ -63,7 +63,7 @@ define(function (require, exports, module) {
         var deferred = $.Deferred();
         
         if (!expression || typeof expression !== 'string'){
-            throw new TypeError('Invalid _call() input. Expected string, got: ' + typeof expression);
+            throw new TypeError('Invalid input. Expected string JS expression, got: ' + expression);
         }
         
         if (Inspector.connected() !== true){
@@ -72,15 +72,14 @@ define(function (require, exports, module) {
         
         Inspector.Runtime.evaluate(expression, function(resp){
             if (!resp || resp.wasThrown){
-                console.error(resp);
-                deferred.reject();
+                deferred.reject(resp.result);
             }
             else{
-                deferred.resolve(resp)
+                deferred.resolve(resp.result);
             }
         })
         
-        return deferred.promise(); 
+        return deferred.promise();
     }
     
     /*
@@ -93,15 +92,13 @@ define(function (require, exports, module) {
         @param {Object/Model} model Instance of Model obj with attributes from code editor
         @return {Object/Promise}
     */
-    function _setup(model){ 
+    function _setup(model){
         
-        if (!_cache.model){
-            _cache.model = model;
-        }
+        _cache.model = _cache.model || model;
         
         var attr = {
             selector: model.get('selector'),
-            value: model.get('value'),
+            value:    model.get('value'),
             property: model.get('property')
         }
         
@@ -117,11 +114,12 @@ define(function (require, exports, module) {
         
         return _call(expr)
             .then(_startSyncLoop)
-            .then( function(){ _hasEditor = true} );
+            .then( function(){ _hasEditor = true} )
+            .fail(_whenRemoteCallFailed);
     }
     
     /*
-        Send instructions to update the existing live editor from 
+        Send instructions to update the existing live editor in 
         the live preview page with the state of the given model.
         
         The model here is an instance of Model, not an object literal like _model.
@@ -143,20 +141,20 @@ define(function (require, exports, module) {
         
         var attr = {
             selector: model.get('selector'),
-            value: model.get('value'),
+            value:    model.get('value'),
             property: model.get('property')
         }
         
-        // are we updating the editor for the element & property we know?
+        // Asking to update a different element / property? Setup a new editor
         if (attr.selector !== _model.selector || attr.property !== _model.property){
             console.warn('Updating for a different editor');
-            // _model = JSON.parse(JSON.stringify(attr));
-            return _remove().then( function(){ return _setup(model) } );
+
+            return _remove().then( function(){ return _setup(model); } );
         }
         
         console.log('UPDATE', attr.selector, JSON.stringify(attr));
         var expr = _namespace + '.update('+ JSON.stringify(attr) +')';
-        return _call(expr);
+        return _call(expr).fail(_whenRemoteCallFailed);
     }
     
     /*
@@ -196,46 +194,18 @@ define(function (require, exports, module) {
     function _onSyncTick(){
         console.log('SYNC');
         var expr = _namespace + '.getModel()';
-        _call(expr).then(_onGetRemoteModel);
+        _call(expr).then(_whenGetRemoteModel).fail(_whenRemoteCallFailed);
     }
     
-    /*
-        When a user refreshes the live preview window, the injected live editor 
-        and its dependecies get lost.
-        
-        This method attempts to re-inject them. It tries 
-        a number of times before giving up. 
-        
-        After a successful reconnect it sets up the editor in the last cached state.
-        
-        @return {Promise}
-    */
-    function _reconnect(){
-        var deferred = $.Deferred();
-        var onPostInit = function(){
-            _reset();
-            _setup(_cache.model); 
-            _retryCount = 5; 
+    function _whenGetRemoteModel(model){
+        if (!model || !model.value || typeof model.value !== 'string'){
+            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + model);
         }
         
-        if (_retryCount === 0){
-            return deferred.reject();
-        }
-        
-        _retryCount--
-        
-        return _init(_cache.dependencies).then(onPostInit)
-    }
-    
-    function _onGetRemoteModel(resp){
-        if (!resp.result || !resp.result.value || typeof resp.result.value !== 'string'){
-            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + resp.result);
-        }
-        
-        var data = JSON.parse(resp.result.value),
+        var data = JSON.parse(model.value),
             hasChanged = false;
             
-        // sync the local model with the remote model
+        // sync the local model snapshot with the remote model
         for (var key in data){
             if (!_model[key] || !_.isEqual(_model[key], data[key])){
                 _model[key] = data[key];
@@ -247,6 +217,46 @@ define(function (require, exports, module) {
         if (hasChanged){
             $(exports).triggerHandler('modelChange', _model);
         }
+    }
+    
+    /*
+        Handle failed promises for eval calls in the inspected page.
+        If the error is likely because _namespace was missing, attempt to reconnect.
+    */
+    function _whenRemoteCallFailed(result){
+        if (result && result.description && /Cannot call method/.test(result.description)){
+            return _reconnect();
+        }
+    }
+    
+    /*
+        When a user refreshes the live preview window, the injected live editor 
+        and its dependecies get lost.
+        
+        This method attempts to re-inject them. It tries 
+        a number of times before giving up. 
+        
+        After a successful reconnect, it sets up the editor in the last cached state.
+        
+        @return {Promise}
+    */
+    function _reconnect(){
+        var deferred = $.Deferred();
+                
+        function onPostInit(){
+            _reset();
+            _setup(_cache.model);
+            _retryCount = 5; 
+        }
+        
+        if (_retryCount === 0){
+            console.warn('Gave up reconnecting');
+            return deferred.reject();
+        }
+        
+        _retryCount--;
+        
+        return _init(_cache.dependencies).then(onPostInit);
     }
     
     /*
