@@ -165,15 +165,11 @@
     }
     
     window._LD_CSS_EDITOR = {
-        setup: _setup,
-        
-        remove: _remove,
-        
-        update: _update,
-        
-        getModel: _getModel,
-        
-        registerProvider: _registerProvider
+        setup:              _setup,
+        remove:             _remove,
+        update:             _update,
+        getModel:           _getModel,
+        registerProvider:   _registerProvider
     };
     
 })();

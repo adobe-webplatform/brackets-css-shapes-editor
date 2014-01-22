@@ -280,8 +280,8 @@ define(function (require, exports, module) {
         return _call(scripts.join(';'));
     }
     
-    exports.init = _init;
-    exports.setup = _setup;
-    exports.update = _update;
-    exports.remove = _remove;
+    exports.init    = _init;
+    exports.setup   = _setup;
+    exports.update  = _update;
+    exports.remove  = _remove;
 });

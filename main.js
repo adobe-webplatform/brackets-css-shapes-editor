@@ -33,11 +33,12 @@ define(function (require, exports, module) {
         Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
         Model               = require("Model"),
         LiveEditorDriver    = require("LiveEditorLocalDriver");
-        
+    
+    // string source of editor and provider; to be injected in live preview
     var CSSShapesEditor         = require('text!lib/CSSShapesEditor.js'),
         CSSShapesEditorProvider = require('text!lib/CSSShapesEditorProvider.js');
         
-    // Update this if you add editor providers for new properties
+    // Update if you add editors for new properties
     var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
     
     var currentEditor = EditorManager.getActiveEditor();
@@ -45,7 +46,7 @@ define(function (require, exports, module) {
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
         'property': null,
-        'value': null,
+        'value':    null,
         'selector': null
     });
     
@@ -72,9 +73,9 @@ define(function (require, exports, module) {
         @param {Event} e 'change' or 'cursorActivity' event dispatched by editor
     */
     function _constructModel(e){
-        var editor = e.target,
-            doc = editor.document,
-            selection = editor.getSelection(),
+        var editor      = e.target,
+            doc         = editor.document,
+            selection   = editor.getSelection(),
             info, selector, range;
         
         // Get the CSS rule info at the selection start position
@@ -95,6 +96,7 @@ define(function (require, exports, module) {
         }
         
         range = _getCSSValueRangeAt(selection.start, true);
+        
         model.set({
             selector: selector,
             property: info.name,
@@ -121,9 +123,9 @@ define(function (require, exports, module) {
     */
     function _getCSSValueRangeAt(pos, trimWhitespace){
         // TODO support multi-line values
-        var line = currentEditor.document.getLine(pos.line),
-            start = pos.ch,
-            end = pos.ch;
+        var line    = currentEditor.document.getLine(pos.line),
+            start   = pos.ch,
+            end     = pos.ch;
             
         // css values start after a colon (:)
         function isStartBoundaryChar(ch){
@@ -178,7 +180,7 @@ define(function (require, exports, module) {
         
         rangeText = currentEditor.document.getRange(range.start, range.end);
         
-        if (rangeText == value){
+        if (rangeText === value){
             return;
         }
         
@@ -189,7 +191,7 @@ define(function (require, exports, module) {
     // use the model to update the in-browser editor
     function _updateLiveEditor(){
         if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE){
-            return
+            return;
         }
         
         var property = model.get('property');
@@ -203,7 +205,6 @@ define(function (require, exports, module) {
     }
     
     function _onActiveEditorChange(){
-        
         if (currentEditor){
             $(currentEditor).off("cursorActivity change", _constructModel)
         }
@@ -224,13 +225,14 @@ define(function (require, exports, module) {
             break;
             
             case LiveDevelopment.STATUS_ACTIVE:
+                
                 // dependencies as strings; to be injected in the live preview page
                 var deps = [CSSShapesEditor, CSSShapesEditorProvider];
 
                 LiveEditorDriver.init(deps)
                     .then(function(){
                         // if the cursor is on an editable shape property when turning on live preview,
-                        // also setup an appropriate editor.
+                        // also setup a live editor in the browser.
                         if (model.get('property')){
                             LiveEditorDriver.setup(model)
                         }
