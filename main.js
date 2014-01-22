@@ -246,7 +246,7 @@ define(function (require, exports, module) {
         _updateLiveEditor();
     });
     
-    $(LiveEditorDriver).on('modelChange', function(e, data, force){
+    $(LiveEditorDriver).on('model.update', function(e, data, force){
         
         /*  
             If the user is still typing in the code editor, refuse to update the model 

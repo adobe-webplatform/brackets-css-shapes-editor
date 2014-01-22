@@ -217,7 +217,7 @@ define(function (require, exports, module) {
         
         // notify Brackets so it can update the code editor
         if (hasChanged || data.forceUpdate){
-            $(exports).triggerHandler('modelChange', [_model, data.forceUpdate]);
+            $(exports).triggerHandler('model.update', [_model, data.forceUpdate]);
         }
     }
     
