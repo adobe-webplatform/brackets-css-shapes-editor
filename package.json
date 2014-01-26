@@ -8,6 +8,15 @@
       "Razvan Caliman <rcaliman@adobe.com>",
       "François REMY <francois.remy.dev@outlook.com>"
     ],
-    "license": "MIT",
-    "categories": "editing"
+    "license": "TODO",
+    "categories": "editing",
+    "devDependencies": {
+      "grunt": "~0.4.1",
+      "grunt-contrib-jshint": "~0.6.3",
+      "grunt-contrib-watch": "~0.5.2",
+      "load-grunt-tasks": "~0.2.1"
+    },
+    "engines": {
+      "node": ">=0.8.0"
+    }
 }
