@@ -164,7 +164,7 @@ define(function (require, exports, module) {
             // TODO: support multi-line values
             'start': { line: pos.line, ch: start },
             'end': { line: pos.line, ch: end }
-        }
+        };
     }
     
     
@@ -206,13 +206,13 @@ define(function (require, exports, module) {
     
     function _onActiveEditorChange(){
         if (currentEditor){
-            $(currentEditor).off("cursorActivity change", _constructModel)
+            $(currentEditor).off("cursorActivity change", _constructModel);
         }
         
         currentEditor = EditorManager.getActiveEditor();
         
         if (currentEditor){ 
-            $(currentEditor).on("cursorActivity change", _constructModel)
+            $(currentEditor).on("cursorActivity change", _constructModel);
         }
     }
     
@@ -220,24 +220,24 @@ define(function (require, exports, module) {
 
         switch (status){
             
-            case LiveDevelopment.STATUS_INACTIVE:
-                LiveEditorDriver.remove();
+        case LiveDevelopment.STATUS_INACTIVE:
+            LiveEditorDriver.remove();
             break;
+        
+        case LiveDevelopment.STATUS_ACTIVE:
             
-            case LiveDevelopment.STATUS_ACTIVE:
-                
-                // dependencies as strings; to be injected in the live preview page
-                var deps = [CSSShapesEditor, CSSShapesEditorProvider];
+            // dependencies as strings; to be injected in the live preview page
+            var deps = [CSSShapesEditor, CSSShapesEditorProvider];
 
-                LiveEditorDriver.init(deps)
-                    .then(function(){
-                        // if the cursor is on an editable shape property when turning on live preview,
-                        // also setup a live editor in the browser.
-                        if (model.get('property')){
-                            LiveEditorDriver.setup(model)
-                        }
-                    });
-            break;
+            LiveEditorDriver.init(deps)
+                .then(function(){
+                    // if the cursor is on an editable shape property when turning on live preview,
+                    // also setup a live editor in the browser.
+                    if (model.get('property')){
+                        LiveEditorDriver.setup(model);
+                    }
+                });
+            break; 
         }
     }
     
@@ -265,8 +265,8 @@ define(function (require, exports, module) {
             return;
         }
         
-        model.set(data)
-    })
+        model.set(data);
+    });
     
     $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);
     $(EditorManager).on("activeEditorChange", _onActiveEditorChange);

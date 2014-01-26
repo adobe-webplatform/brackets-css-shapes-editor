@@ -20,7 +20,10 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
+
 (function() {
+    "use strict";
         
         // Hash with available editors for given properties.
         // @see _registerProvider()
@@ -83,7 +86,7 @@
         _model.forceUpdate = _emptyShapeRE.test(_model.value);
         
         // get an editor that can handle the property
-        _activeEditor = new _providers[model.property];
+        _activeEditor = new _providers[model.property]();
         _activeEditor.setup(_target, model);
         
         // sync the element's style and the model value
@@ -92,7 +95,7 @@
     
     function _onValueChange(value){
         if (!_target || !value){
-            return
+            return;
         }
         
         // update the selector target's style

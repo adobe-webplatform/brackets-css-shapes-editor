@@ -72,13 +72,13 @@ define(function (require, exports, module) {
         
         Inspector.Runtime.evaluate(expression, function(resp){
             if (!resp || resp.wasThrown){
-                console.error(resp.result)
+                console.error(resp.result);
                 deferred.reject(resp.result);
             }
             else{
                 deferred.resolve(resp.result);
             }
-        })
+        });
         
         return deferred.promise();
     }
@@ -101,11 +101,11 @@ define(function (require, exports, module) {
             selector: model.get('selector'),
             value:    model.get('value'),
             property: model.get('property')
-        }
+        };
         
         if (_hasEditor){
             // If we are asked to re-setup the same editor, update the existing one
-            if (attr.selector == _model.selector && attr.property == _model.property){
+            if (attr.selector === _model.selector && attr.property === _model.property){
                 return _update(model);
             }
         }
@@ -115,7 +115,7 @@ define(function (require, exports, module) {
         
         return _call(expr)
             .then(_startSyncLoop)
-            .then( function(){ _hasEditor = true} )
+            .then( function(){ _hasEditor = true; } )
             .fail(_whenRemoteCallFailed);
     }
     
@@ -144,7 +144,7 @@ define(function (require, exports, module) {
             selector: model.get('selector'),
             value:    model.get('value'),
             property: model.get('property')
-        }
+        };
         
         // Asking to update a different element / property? Setup a new editor
         if (attr.selector !== _model.selector || attr.property !== _model.property){
@@ -200,7 +200,7 @@ define(function (require, exports, module) {
     
     function _whenGetRemoteModel(response){
         if (!response || !response.value || typeof response.value !== 'string'){
-            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + model);
+            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + response.value);
         }
         
         var data = JSON.parse(response.value),

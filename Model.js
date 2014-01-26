@@ -43,9 +43,9 @@ define(function (require, exports, module){
             if (callbacks.length){
                 callbacks.forEach(function(cb){
                     cb.call(this, details);
-                })
+                });
             }
-        };
+        }
         
         function _set(key, value, silent){
             var hasChanged = false;
@@ -64,7 +64,7 @@ define(function (require, exports, module){
             // 3-arguments notation: key, value and optional boolean
             else{
                 
-                if (!_.isEqual(_props[k], key[k])){
+                if (!_.isEqual(_props[key], value)){
                     _props[key] = value;
                     hasChanged = true;
                 }
@@ -75,8 +75,8 @@ define(function (require, exports, module){
             }
         }
         
-        if (typeof properties == 'object'){ 
-            _set(properties, true)
+        if (typeof properties === 'object'){ 
+            _set(properties, true);
         }
         
         return {
@@ -97,11 +97,11 @@ define(function (require, exports, module){
                 _props = JSON.parse(JSON.stringify(_initial));
                 
                 if (!silent){
-                    _trigger('change', _props)
+                    _trigger('change', _props);
                 }
             }
-        }
+        };
     }
     
-    return Model
-})
+    return Model;
+});

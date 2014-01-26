@@ -10,15 +10,9 @@ module.exports = function (grunt) {
     var pkg = grunt.file.readJSON("package.json");
 
     grunt.initConfig({
-        
-        // configurable paths
-        yeoman: {
-            src: './',
-            lib: 'lib/'
-        },
-        
+
         watch: {
-            files: ['<%= yeoman.src %>/{,*/}*.js'],
+            files: ['./{,*/}*.js'],
             tasks: ['jshint']
         },
         
@@ -26,8 +20,9 @@ module.exports = function (grunt) {
             options: {
                 jshintrc: '.jshintrc'
             },
+            // lint all files, ignore the built output from https://github.com/adobe-webplatform/css-shapes-editor
             all: [
-                '<%= yeoman.src %>/*.js'
+                './{,*/}*.js', '!./lib/CSSShapesEditor.js'
             ]
         }
         
