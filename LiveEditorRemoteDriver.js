@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2013 Adobe Systems Incorporated.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -20,11 +20,12 @@
  * DEALINGS IN THE SOFTWARE.
  */
 
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50, browser: true */
+/*global _onValueChange: false */
 
-(function() {
+(function () {
     "use strict";
-        
+
         // Hash with available editors for given properties.
         // @see _registerProvider()
     var _providers = {},
@@ -32,7 +33,7 @@
         _activeEditor,
         // element matched by model.selector
         _target = null,
-        /* 
+        /*
             Hash with selector, CSS property and value.
             Will be updated by _setup() and _onValueChange()
             Will be synced to Brackets via _getModel() to update text in code editor.
@@ -41,132 +42,132 @@
         _model = null,
         // regular expression for shape values with no coordinates
         _emptyShapeRE = /(polygon|circle|rectangle|ellipse)\(\s*\)/i;
-    
+
     /*
         Setup an editor for a specific CSS property of an element using data in model.
         Editors must be registered with _registerProvider()
-        
+
         @param {Object} model Hash with data:
             {
                 // selector to match an element for editing
                 selector: {String},
-                
+
                 // CSS property to edit
                 property: {String},
-                
+
                 // Initial value for editor
                 value: {String}
             }
     */
-    function _setup(model){
-        if (!model || !model.property || !model.selector){
+    function _setup(model) {
+        if (!model || !model.property || !model.selector) {
             console.error('model is funky: ' + JSON.stringify(model));
         }
-        
-        if (!_providers[model.property]){
+
+        if (!_providers[model.property]) {
             console.warn('no editor provided for property: ' + model.property);
             return;
         }
-        
+
         // find the first matching element from the given selector
         // TODO: implement querySelectorAll() navigation through multiple results
         _target = document.querySelector(model.selector);
-        
-        if (!_target){
+
+        if (!_target) {
             console.warn('no element matching selector: ' + model.selector);
             return;
         }
-        
+
         // reset everything
         // _remove();
-        
+
         // store the data from Brackets editor
         _model = model;
-        
+
         _model.forceUpdate = _emptyShapeRE.test(_model.value);
-        
+
         // get an editor that can handle the property
         _activeEditor = new _providers[model.property]();
         _activeEditor.setup(_target, model);
-        
+
         // sync the element's style and the model value
         _activeEditor.onValueChange(_onValueChange);
     }
-    
-    function _onValueChange(value){
-        if (!_target || !value){
+
+    function _onValueChange(value) {
+        if (!_target || !value) {
             return;
         }
-        
+
         // update the selector target's style
         _target.style[_model.property] = value;
-        
+
         // remove the polygon fill-rule until CSSUtils.getInfoAtPos() is fixed
         // @see https://github.com/adobe/brackets/pull/6568
         value = /^polygon/.test(value) ? value.replace(/nonzero,\s*/, '') : value;
-        
-        /* 
+
+        /*
            If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
            the CSSShapesEditor will automatically infer coordintates from the element and return a usable shape value.
-           
+
            Here, we set a flag to force the code editor to accept this inferred default shape value.
            The code editor is set to ignore shape values from the live editor, if the user is still typing.
            Setting this flag to true circumvents that behavior.
         */
         _model.forceUpdate = _emptyShapeRE.test(_model.value);
-        
+
         // update the model. will be requested by Brackets to sync code editor
         _model.value = value;
     }
-    
-    function _remove(){
-        if (_activeEditor){
+
+    function _remove() {
+        if (_activeEditor) {
             _activeEditor.remove();
             _activeEditor = undefined;
         }
-        
+
         _model = null;
     }
-    
-    function _update(model){
+
+    function _update(model) {
         _activeEditor.update(model);
     }
-    
-    function _getModel(){
+
+    function _getModel() {
         return JSON.stringify(_model);
     }
-    
+
     /*
         Register an editor for the given CSS property.
         This allows support for custom editors for any CSS property.
-        
-        Editor will be invoked if the given property 
+
+        Editor will be invoked if the given property
         matches model.property in _LD_CSS_EDITOR.setup(model).
-        
+
         @param {String} property CSS property
         @param {Object} editor Handler for the property.
-        
+
         Provided editors MUST implement the follwing interface:
-        {   
-            // turn on editor on specified target HTMLElement. 
+        {
+            // turn on editor on specified target HTMLElement.
             // picks-up necessary args from model
-            setup: function(target, model){},
-            
+            setup: function (target, model) {},
+
             // update the editor state given the provided model
-            update: function(model){},
-            
+            update: function (model) {},
+
             // turn off the editor and remove any scaffolding
-            remove: function(){},
-            
+            remove: function () {},
+
             // sets a callback to be called with the new value
-            onValueChange: function(callback){}
+            onValueChange: function (callback) {}
         }
     */
-    function _registerProvider(property, editor){
+    function _registerProvider(property, editor) {
         // TODO: check for interface conformity
         _providers[property] = editor;
     }
-    
+
     window._LD_CSS_EDITOR = {
         setup:              _setup,
         remove:             _remove,
@@ -174,5 +175,5 @@
         getModel:           _getModel,
         registerProvider:   _registerProvider
     };
-    
-})();
+
+}());

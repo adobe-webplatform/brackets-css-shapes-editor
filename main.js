@@ -50,6 +50,60 @@ define(function (require, exports, module) {
         'selector': null
     });
     
+        /*
+        Returns the range that wraps the CSS value at the given pos.
+        Assumes pos is within or adjacent to a CSS value (between : and ; or })
+        
+        @param {!{line:number, ch:number}} pos
+        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
+        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
+    */
+    function _getCSSValueRangeAt(pos, trimWhitespace) {
+        // TODO support multi-line values
+        var line    = currentEditor.document.getLine(pos.line),
+            start   = pos.ch,
+            end     = pos.ch;
+            
+        // css values start after a colon (:)
+        function isStartBoundaryChar(ch) {
+            return (/:/.test(ch));
+        }
+        
+        // css values end before a semicolon (;) or closing bracket (})
+        function isEndBoundaryChar(ch) {
+            return (/[;}]/.test(ch));
+        }
+        
+        function isWhitespaceChar(ch) {
+            return (/\s/.test(ch));
+        }
+        
+        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
+            --start;
+        }
+
+        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
+            ++end;
+        }
+        
+        // run a second pass to trim leading and trailing whitespace
+        if (trimWhitespace) {
+            while (start < end && isWhitespaceChar(line.charAt(start))) {
+                ++start;
+            }
+
+            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
+                --end;
+            }
+        }
+        
+        return {
+            // TODO: support multi-line values
+            'start': { line: pos.line, ch: start },
+            'end': { line: pos.line, ch: end }
+        };
+    }
+    
     /*
         Constructs the global model with data if the cursor is on a CSS rule 
         with a property from SUPPORTED_PROPS.
@@ -72,16 +126,18 @@ define(function (require, exports, module) {
         
         @param {Event} e 'change' or 'cursorActivity' event dispatched by editor
     */
-    function _constructModel(e){
+    function _constructModel(e) {
         var editor      = e.target,
             doc         = editor.document,
             selection   = editor.getSelection(),
-            info, selector, range;
+            info,
+            selector,
+            range;
         
         // Get the CSS rule info at the selection start position
         info = CSSUtils.getInfoAtPos(editor, selection.start);
         
-        if (info.context !== CSSUtils.PROP_VALUE || (SUPPORTED_PROPS.indexOf(info.name) < 0)){
+        if (info.context !== CSSUtils.PROP_VALUE || (SUPPORTED_PROPS.indexOf(info.name) < 0)) {
             model.reset();
             return;
         }
@@ -90,7 +146,7 @@ define(function (require, exports, module) {
         // it matches selectors outside <style> when run on single declaration block in <style> element
         selector = CSSUtils.findSelectorAtDocumentPos(editor, selection.start);
         
-        if (!selector || typeof selector !== 'string'){
+        if (!selector || typeof selector !== 'string') {
             model.reset();
             return;
         }
@@ -109,78 +165,23 @@ define(function (require, exports, module) {
                 endless loop because model.value and document.getRange(model.range)
                 will not be equal
             */
-            value: editor.document.getRange(range.start, range.end),
+            value: editor.document.getRange(range.start, range.end)
         });
     }
-    
-    /*
-        Returns the range that wraps the CSS value at the given pos.
-        Assumes pos is within or adjacent to a CSS value (between : and ; or })
         
-        @param {!{line:number, ch:number}} pos
-        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
-        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
-    */
-    function _getCSSValueRangeAt(pos, trimWhitespace){
-        // TODO support multi-line values
-        var line    = currentEditor.document.getLine(pos.line),
-            start   = pos.ch,
-            end     = pos.ch;
-            
-        // css values start after a colon (:)
-        function isStartBoundaryChar(ch){
-            return (/:/.test(ch));
-        }
-        
-        // css values end before a semicolon (;) or closing bracket (})
-        function isEndBoundaryChar(ch){
-            return (/[;}]/.test(ch));
-        }
-        
-        function isWhitespaceChar(ch){
-            return (/\s/.test(ch));
-        }
-        
-        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
-            --start;
-        }
-
-        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
-            ++end;
-        }
-        
-        // run a second pass to trim leading and trailing whitespace
-        if (trimWhitespace){
-            while (start < end && isWhitespaceChar(line.charAt(start))) {
-                ++start;
-            }
-
-            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
-                --end;
-            }
-        }
-        
-        return {
-            // TODO: support multi-line values
-            'start': { line: pos.line, ch: start },
-            'end': { line: pos.line, ch: end }
-        };
-    }
-    
-    
     // use the model to update the Brackets text editor property value
-    function _updateCodeEditor(){
+    function _updateCodeEditor() {
         var range = model.get('range'),
             value = model.get('value'),
             rangeText;
         
-        if (!range){
+        if (!range) {
             return;
         }
         
         rangeText = currentEditor.document.getRange(range.start, range.end);
         
-        if (rangeText === value){
+        if (rangeText === value) {
             return;
         }
         
@@ -189,36 +190,35 @@ define(function (require, exports, module) {
     }
     
     // use the model to update the in-browser editor
-    function _updateLiveEditor(){
-        if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE){
+    function _updateLiveEditor() {
+        if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE) {
             return;
         }
         
         var property = model.get('property');
             
-        if (property){
+        if (property) {
             LiveEditorDriver.update(model);
-        }
-        else{ 
+        } else {
             LiveEditorDriver.remove();
         }
     }
     
-    function _onActiveEditorChange(){
-        if (currentEditor){
+    function _onActiveEditorChange() {
+        if (currentEditor) {
             $(currentEditor).off("cursorActivity change", _constructModel);
         }
         
         currentEditor = EditorManager.getActiveEditor();
         
-        if (currentEditor){ 
+        if (currentEditor) {
             $(currentEditor).on("cursorActivity change", _constructModel);
         }
     }
     
     function _onLiveDevelopmentStatusChange(event, status) {
 
-        switch (status){
+        switch (status) {
             
         case LiveDevelopment.STATUS_INACTIVE:
             LiveEditorDriver.remove();
@@ -230,23 +230,23 @@ define(function (require, exports, module) {
             var deps = [CSSShapesEditor, CSSShapesEditorProvider];
 
             LiveEditorDriver.init(deps)
-                .then(function(){
+                .then(function () {
                     // if the cursor is on an editable shape property when turning on live preview,
                     // also setup a live editor in the browser.
-                    if (model.get('property')){
+                    if (model.get('property')) {
                         LiveEditorDriver.setup(model);
                     }
                 });
-            break; 
+            break;
         }
     }
     
-    model.on('change', function(e){
+    model.on('change', function (e) {
         _updateCodeEditor();
         _updateLiveEditor();
     });
     
-    $(LiveEditorDriver).on('model.update', function(e, data, force){
+    $(LiveEditorDriver).on('model.update', function (e, data, force) {
         
         /*  
             If the user is still typing in the code editor, refuse to update the model 
@@ -261,7 +261,7 @@ define(function (require, exports, module) {
             
             If there is a request to force a model update, circumvent this.
         */
-        if (EditorManager.getFocusedEditor() && !force){
+        if (EditorManager.getFocusedEditor() && !force) {
             return;
         }
         
