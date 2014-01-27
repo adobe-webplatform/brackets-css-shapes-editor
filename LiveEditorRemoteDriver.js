@@ -40,7 +40,7 @@
         */
         _model = null,
         // regular expression for shape values with no coordinates
-        _emptyShapeRE = /[polygon|circle|rectangle|ellipse]\(\s*\)/i;
+        _emptyShapeRE = /(polygon|circle|rectangle|ellipse)\(\s*\)/i;
     
     /*
         Setup an editor for a specific CSS property of an element using data in model.
