@@ -1,0 +1,5 @@
+.negative-match {
+    -webkit-shape-inside: circle();
+/*  shape-inside: circle(); */
+    shape-inside: circle;
+}
