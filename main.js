@@ -58,43 +58,24 @@ define(function (require, exports, module) {
         @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
         @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
-    function _getCSSValueRangeAt(pos, trimWhitespace) {
+    function _getRangeForCSSValueAt(pos, trimWhitespace) {
         // TODO support multi-line values
         var line    = currentEditor.document.getLine(pos.line),
             start   = pos.ch,
-            end     = pos.ch;
+            end     = pos.ch,
+            value;
             
         // css values start after a colon (:)
-        function isStartBoundaryChar(ch) {
-            return (/:/.test(ch));
-        }
+        start = line.lastIndexOf(':', pos.ch) + 1;
         
         // css values end before a semicolon (;) or closing bracket (})
-        function isEndBoundaryChar(ch) {
-            return (/[;}]/.test(ch));
-        }
+        // TODO support closing bracket and multi-line. Bracket may be lower.
+        end = line.indexOf(';', pos.ch);
         
-        function isWhitespaceChar(ch) {
-            return (/\s/.test(ch));
-        }
-        
-        while (start > 0 && !isStartBoundaryChar(line.charAt(start - 1))) {
-            --start;
-        }
-
-        while (end < line.length && !isEndBoundaryChar(line.charAt(end))) {
-            ++end;
-        }
-        
-        // run a second pass to trim leading and trailing whitespace
         if (trimWhitespace) {
-            while (start < end && isWhitespaceChar(line.charAt(start))) {
-                ++start;
-            }
-
-            while (end > start && isWhitespaceChar(line.charAt(end - 1))) {
-                --end;
-            }
+            value = line.substring(start, end);
+            start = start + value.match(/^\s*/)[0].length;
+            end = end - value.match(/\s*$/)[0].length;
         }
         
         return {
@@ -149,7 +130,7 @@ define(function (require, exports, module) {
             return;
         }
         
-        range = _getCSSValueRangeAt(selection.start, true);
+        range = _getRangeForCSSValueAt(selection.start, true);
         
         model.set({
             selector: selector,
@@ -284,5 +265,5 @@ define(function (require, exports, module) {
     // for testing only
     exports.model = model;
     exports._constructModel = _constructModel;
-    exports._getCSSValueRangeAt = _getCSSValueRangeAt;
+    exports._getRangeForCSSValueAt = _getRangeForCSSValueAt;
 });
