@@ -142,8 +142,6 @@ define(function (require, exports, module) {
             return;
         }
         
-        // TODO: fix CSSUtils.findSelectorAtDocumentPos() because
-        // it matches selectors outside <style> when run on single declaration block in <style> element
         selector = CSSUtils.findSelectorAtDocumentPos(editor, selection.start);
         
         if (!selector || typeof selector !== 'string') {
