@@ -141,9 +141,8 @@ define(function (require, exports, module) {
                 expect(main.model.get('value')).toBe('polygon(0 0, 100px 0, 100px 100px)');
             });
 
-            // TODO: turn on after this lands: https://github.com/adobe/brackets/issues/6572
-            xit("should match polygon() value with fill-rule", function () {
-                testEditor.setCursorPos(18, 27);
+            it("should match polygon() value with fill-rule", function () {
+                testEditor.setCursorPos(19, 27);
                 expect(main.model.get('value')).toBe('polygon(nonzero, 0 0, 100px 0, 100px 100px)');
             });
         });
@@ -200,8 +199,7 @@ define(function (require, exports, module) {
                 testDocument = null;
             });
 
-            // TODO: turn on after this lands: https://github.com/adobe/brackets/pull/6669
-            xit("should find first selector in head <style>", function () {
+            it("should find first selector in head <style>", function () {
                 testEditor.setCursorPos(4, 20);
                 expect(main.model.get('selector')).toBe('#content');
             });
@@ -211,14 +209,12 @@ define(function (require, exports, module) {
                 expect(main.model.get('selector')).toBe('div');
             });
 
-            // TODO: turn on after this lands: https://github.com/adobe/brackets/pull/6669
-            xit("should find first selector in body <style>", function () {
+            it("should find first selector in body <style>", function () {
                 testEditor.setCursorPos(15, 22);
                 expect(main.model.get('selector')).toBe('#content');
             });
 
-            // TODO: turn on after this lands: https://github.com/adobe/brackets/pull/6669
-            xit("should find first selector in scoped <style>", function () {
+            it("should find first selector in scoped <style>", function () {
                 testEditor.setCursorPos(21, 22);
                 expect(main.model.get('selector')).toBe('#content');
             });
