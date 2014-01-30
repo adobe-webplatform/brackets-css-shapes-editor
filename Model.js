@@ -47,37 +47,29 @@ define(function (require, exports, module) {
             }
         }
         
-        function _set(key, value, silent) {
+        function _set(obj, silent) {
             var hasChanged = false,
                 k;
             
-            if (typeof key === 'object' && arguments.length < 3) {
-                // 2-arguments notation: hash with attributes and optional boolean
-
-                for (k in key) {
-                    if (key.hasOwnProperty(k)) {
-                        if (!_.isEqual(_props[k], key[k])) {
-                            _props[k] = key[k];
-                            hasChanged = true;
-                        }
+            if (!obj || typeof obj !== "object") {
+                throw new TypeError("Invalid input. Expected object with properties, got: " + obj);
+            }
+            
+            for (k in obj) {
+                if (obj.hasOwnProperty(k)) {
+                    if (!_.isEqual(_props[k], obj[k])) {
+                        _props[k] = obj[k];
+                        hasChanged = true;
                     }
-                }
-                silent = value || false;
-            } else {
-                // 3-arguments notation: key, value and optional boolean
-  
-                if (!_.isEqual(_props[key], value)) {
-                    _props[key] = value;
-                    hasChanged = true;
                 }
             }
             
             if (silent !== true && hasChanged) {
-                _trigger('change', _props);
+                _trigger("change", _props);
             }
         }
         
-        if (typeof properties === 'object') {
+        if (typeof properties === "object") {
             _set(properties, true);
         }
         
@@ -99,7 +91,7 @@ define(function (require, exports, module) {
                 _props = JSON.parse(JSON.stringify(_initial));
                 
                 if (!silent) {
-                    _trigger('change', _props);
+                    _trigger("change", _props);
                 }
             }
         };
