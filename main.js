@@ -243,7 +243,19 @@ define(function (require, exports, module) {
     
     model.on('change', function (e) {
         _updateCodeEditor();
-        _updateLiveEditor();
+        
+        /* 
+            Emit update to the live editor only if the code editor is focused,
+            hence data comes from input in Brackets.
+            
+            Checking for this avoids echoing back data received from the live editor.
+            The echoed data might be stale data if live editor is being actively used.
+            
+            Easier to do this, than to check against the history of changes, or timestamp payloads.
+        */
+        if (EditorManager.getFocusedEditor()) {
+            _updateLiveEditor();
+        }
     });
     
     $(LiveEditorDriver).on('model.update', function (e, data, force) {
