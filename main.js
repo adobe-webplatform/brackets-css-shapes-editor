@@ -35,19 +35,19 @@ define(function (require, exports, module) {
         LiveEditorDriver    = require("LiveEditorLocalDriver");
     
     // string source of editor and provider; to be injected in live preview
-    var CSSShapesEditor         = require('text!lib/CSSShapesEditor.js'),
-        CSSShapesEditorProvider = require('text!lib/CSSShapesEditorProvider.js');
+    var CSSShapesEditor         = require("text!lib/CSSShapesEditor.js"),
+        CSSShapesEditorProvider = require("text!lib/CSSShapesEditorProvider.js");
         
     // Update if you add editors for new properties
-    var SUPPORTED_PROPS = ['shape-inside', 'shape-outside', 'clip-path'];
+    var SUPPORTED_PROPS = ["shape-inside", "shape-outside", "clip-path"];
     
     var currentEditor = EditorManager.getActiveEditor();
     
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
-        'property': null,
-        'value':    null,
-        'selector': null
+        property: null,
+        value:    null,
+        selector: null
     });
     
         /*
@@ -66,11 +66,11 @@ define(function (require, exports, module) {
             value;
             
         // css values start after a colon (:)
-        start = line.lastIndexOf(':', pos.ch) + 1;
+        start = line.lastIndexOf(":", pos.ch) + 1;
         
         // css values end before a semicolon (;) or closing bracket (})
         // TODO support closing bracket and multi-line. Bracket may be lower.
-        end = line.indexOf(';', pos.ch);
+        end = line.indexOf(";", pos.ch);
         
         if (trimWhitespace) {
             value = line.substring(start, end);
@@ -80,8 +80,8 @@ define(function (require, exports, module) {
         
         return {
             // TODO: support multi-line values
-            'start': { line: pos.line, ch: start },
-            'end': { line: pos.line, ch: end }
+            "start": { line: pos.line, ch: start },
+            "end": { line: pos.line, ch: end }
         };
     }
     
@@ -125,7 +125,7 @@ define(function (require, exports, module) {
         
         selector = CSSUtils.findSelectorAtDocumentPos(editor, selection.start);
         
-        if (!selector || typeof selector !== 'string') {
+        if (!selector || typeof selector !== "string") {
             model.reset();
             return;
         }
@@ -150,8 +150,8 @@ define(function (require, exports, module) {
         
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor() {
-        var range = model.get('range'),
-            value = model.get('value'),
+        var range = model.get("range"),
+            value = model.get("value"),
             rangeText;
         
         if (!range) {
@@ -174,7 +174,7 @@ define(function (require, exports, module) {
             return;
         }
         
-        var property = model.get('property');
+        var property = model.get("property");
             
         if (property) {
             LiveEditorDriver.update(model);
@@ -212,7 +212,7 @@ define(function (require, exports, module) {
                 .then(function () {
                     // if the cursor is on an editable shape property when turning on live preview,
                     // also setup a live editor in the browser.
-                    if (model.get('property')) {
+                    if (model.get("property")) {
                         LiveEditorDriver.setup(model);
                     }
                 });
@@ -220,7 +220,7 @@ define(function (require, exports, module) {
         }
     }
     
-    model.on('change', function (e) {
+    model.on("change", function (e) {
         _updateCodeEditor();
         
         /* 
@@ -237,7 +237,7 @@ define(function (require, exports, module) {
         }
     });
     
-    $(LiveEditorDriver).on('model.update', function (e, data, force) {
+    $(LiveEditorDriver).on("model.update", function (e, data, force) {
         
         /*  
             If the user is still typing in the code editor, refuse to update the model 

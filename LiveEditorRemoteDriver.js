@@ -60,12 +60,12 @@
             }
     */
     function _setup(model) {
-        if (!model || !model.property || !model.selector) {
-            console.error('model is funky: ' + JSON.stringify(model));
+        if (!model || !model.property) {
+            throw new TypeError("Invalid input model or missing property.");
         }
 
         if (!_providers[model.property]) {
-            console.warn('no editor provided for property: ' + model.property);
+            console.warn("No editor provided for property: " + model.property);
             return;
         }
 
@@ -74,7 +74,7 @@
         _target = document.querySelector(model.selector);
 
         if (!_target) {
-            console.warn('no element matching selector: ' + model.selector);
+            console.warn("No element matching selector: " + model.selector);
             return;
         }
 

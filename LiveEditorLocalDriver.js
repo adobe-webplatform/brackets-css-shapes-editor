@@ -21,7 +21,7 @@
  */
 
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/*global define, $, brackets, window, _init: false, _update: false, _setup: false, _remove: false, _reset:false, _startSyncLoop: false, _stopSyncLoop:false, _onSyncTick: false, _whenGetRemoteModel: false, _whenRemoteCallFailed: false, _reconnect: false */
+/*global define, $, brackets, window, _reset: false, _reconnect: false, _update: false */
 
 define(function (require, exports, module) {
     "use strict";
@@ -29,10 +29,10 @@ define(function (require, exports, module) {
     var Inspector = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
         _         = brackets.getModule("thirdparty/lodash");
 
-    var LiveEditorRemoteDriver = require('text!LiveEditorRemoteDriver.js'),
+    var LiveEditorRemoteDriver = require("text!LiveEditorRemoteDriver.js"),
 
         // namspace in the inspected page where live editor methods live
-        _namespace = 'window._LD_CSS_EDITOR',
+        _namespace = "window._LD_CSS_EDITOR",
 
         // snapshot of remote model from live editor in the inspected page (live preivew)
         _model = {},
@@ -51,7 +51,7 @@ define(function (require, exports, module) {
 
         // misc storage; used in reconnect scenario
         _cache = {};
-
+    
     /*
         Evaluate the given expression in the context of the live preview page.
         Returns a promise. Fails the promise if the inspector is not connected.
@@ -62,8 +62,8 @@ define(function (require, exports, module) {
     function _call(expression) {
         var deferred = $.Deferred();
 
-        if (!expression || typeof expression !== 'string') {
-            throw new TypeError('Invalid input. Expected string JS expression, got: ' + expression);
+        if (!expression || typeof expression !== "string") {
+            throw new TypeError("Invalid input. Expected string JS expression, got: " + expression);
         }
 
         if (Inspector.connected() !== true) {
@@ -81,7 +81,99 @@ define(function (require, exports, module) {
 
         return deferred.promise();
     }
+    
+    /*
+        Inject remote live editor driver and any specified editor providers.
+        @param {?Array} providers String sources of editors to be available in the browser; optional
+    */
+    function _init(providers) {
+        var scripts = [].concat(LiveEditorRemoteDriver, providers || []);
 
+        // cache dependencies for reuse when a re-init is required (ex: after a page refresh)
+        _cache.dependencies = scripts;
+
+        $(exports).triggerHandler("init");
+
+        return _call(scripts.join(";"));
+    }
+
+    /*
+        Send instructions to remove the live editor from the live preview page.
+
+        @return {Object/Promise}
+    */
+    function _remove() {
+        if (_hasEditor === false) {
+            return;
+        }
+
+        console.log("REMOVE");
+
+        _reset();
+        var expr = _namespace + ".remove()";
+        return _call(expr);
+    }
+    
+    function _whenGetRemoteModel(response) {
+        if (!response || !response.value || typeof response.value !== "string") {
+            throw new TypeError("Invalid result from remote driver .getModel(). Expected JSON string, got:" + response.value);
+        }
+
+        var data = JSON.parse(response.value),
+            hasChanged = false,
+            key;
+
+        // sync the local model snapshot with the remote model
+        for (key in data) {
+            if (data.hasOwnProperty(key)) {
+                if (!_model[key] || !_.isEqual(_model[key], data[key])) {
+                    _model[key] = data[key];
+                    hasChanged = true;
+                }
+            }
+        }
+
+        // notify Brackets so it can update the code editor
+        if (hasChanged || data.forceUpdate) {
+            $(exports).triggerHandler("model.update", [_model, data.forceUpdate]);
+        }
+    }
+    
+    /*
+        Handle failed promises for eval calls in the inspected page.
+        If the error is likely because _namespace was missing, attempt to reconnect.
+    */
+    function _whenRemoteCallFailed(result) {
+        if (result && result.description && /Cannot call method/.test(result.description)) {
+            return _reconnect();
+        } else {
+            _cache.model = undefined;
+            return _remove();
+        }
+    }
+    
+    function _stopSyncLoop() {
+        window.clearInterval(_syncInterval);
+    }
+    /*
+        Reset flags and clear snapshot of remote model
+    */
+    function _reset() {
+        _stopSyncLoop();
+        _hasEditor = false;
+        _model = {};
+    }
+
+    function _onSyncTick() {
+        console.log("SYNC");
+        var expr = _namespace + ".getModel()";
+        _call(expr).then(_whenGetRemoteModel).fail(_whenRemoteCallFailed);
+    }
+
+    function _startSyncLoop() {
+        _syncInterval = window.setInterval(_onSyncTick, _syncFrequency);
+    }
+    
     /*
         Send instructions to setup a live editor in the live preview page
         using the selector, css property and css value in the given model.
@@ -97,9 +189,9 @@ define(function (require, exports, module) {
         _cache.model = _cache.model || model;
 
         var attr = {
-            selector: model.get('selector'),
-            value:    model.get('value'),
-            property: model.get('property')
+            selector: model.get("selector"),
+            value:    model.get("value"),
+            property: model.get("property")
         };
 
         if (_hasEditor) {
@@ -109,8 +201,8 @@ define(function (require, exports, module) {
             }
         }
 
-        console.log('SETUP', attr.selector, model.get('value'));
-        var expr = _namespace + '.setup(' + JSON.stringify(attr) + ')';
+        console.log("SETUP", attr.selector, model.get("value"));
+        var expr = _namespace + ".setup(" + JSON.stringify(attr) + ")";
 
         return _call(expr)
             .then(_startSyncLoop)
@@ -130,7 +222,7 @@ define(function (require, exports, module) {
     */
     function _update(model) {
         if (!model) {
-            throw new TypeError('Invalid _update() input. Expected {Model} instance, got: ' + model);
+            throw new TypeError("Invalid _update() input. Expected {Model} instance, got: " + model);
         }
 
         if (_hasEditor === false) {
@@ -140,100 +232,21 @@ define(function (require, exports, module) {
         _cache.model = model;
 
         var attr = {
-            selector: model.get('selector'),
-            value:    model.get('value'),
-            property: model.get('property')
+            selector: model.get("selector"),
+            value:    model.get("value"),
+            property: model.get("property")
         };
 
         // Asking to update a different element / property? Setup a new editor
         if (attr.selector !== _model.selector || attr.property !== _model.property) {
-            console.warn('Updating for a different editor');
+            console.warn("Updating for a different editor");
 
             return _remove().then(function () { return _setup(model); });
         }
 
-        console.log('UPDATE', attr.selector, JSON.stringify(attr));
-        var expr = _namespace + '.update(' + JSON.stringify(attr) + ')';
+        console.log("UPDATE", attr.selector, JSON.stringify(attr));
+        var expr = _namespace + ".update(" + JSON.stringify(attr) + ")";
         return _call(expr).fail(_whenRemoteCallFailed);
-    }
-
-    /*
-        Send instructions to remove the live editor from the live preview page.
-
-        @return {Object/Promise}
-    */
-    function _remove() {
-        if (_hasEditor === false) {
-            return;
-        }
-
-        console.log('REMOVE');
-
-        _reset();
-        var expr = _namespace + '.remove()';
-        return _call(expr);
-    }
-
-    /*
-        Reset flags and clear snapshot of remote model
-    */
-    function _reset() {
-        _stopSyncLoop();
-        _hasEditor = false;
-        _model = {};
-    }
-
-    function _startSyncLoop() {
-        _syncInterval = window.setInterval(_onSyncTick, _syncFrequency);
-    }
-
-    function _stopSyncLoop() {
-        window.clearInterval(_syncInterval);
-    }
-
-    function _onSyncTick() {
-        console.log('SYNC');
-        var expr = _namespace + '.getModel()';
-        _call(expr).then(_whenGetRemoteModel).fail(_whenRemoteCallFailed);
-    }
-
-    function _whenGetRemoteModel(response) {
-        if (!response || !response.value || typeof response.value !== 'string') {
-            throw new TypeError('Invalid result from remote driver .getModel(). Expected JSON string, got:' + response.value);
-        }
-
-        var data = JSON.parse(response.value),
-            hasChanged = false,
-            key;
-
-        // sync the local model snapshot with the remote model
-        for (key in data) {
-            if (data.hasOwnProperty(key)) {
-                if (!_model[key] || !_.isEqual(_model[key], data[key])) {
-                    _model[key] = data[key];
-                    hasChanged = true;
-                }
-            }
-        }
-
-
-        // notify Brackets so it can update the code editor
-        if (hasChanged || data.forceUpdate) {
-            $(exports).triggerHandler('model.update', [_model, data.forceUpdate]);
-        }
-    }
-
-    /*
-        Handle failed promises for eval calls in the inspected page.
-        If the error is likely because _namespace was missing, attempt to reconnect.
-    */
-    function _whenRemoteCallFailed(result) {
-        if (result && result.description && /Cannot call method/.test(result.description)) {
-            return _reconnect();
-        } else {
-            _cache.model = undefined;
-            return _remove();
-        }
     }
 
     /*
@@ -257,28 +270,13 @@ define(function (require, exports, module) {
         }
 
         if (_retryCount === 0) {
-            console.warn('Gave up reconnecting');
+            console.warn("Gave up reconnecting");
             return deferred.reject();
         }
 
         _retryCount--;
 
         return _init(_cache.dependencies).then(onPostInit);
-    }
-
-    /*
-        Inject remote live editor driver and any specified editor providers.
-        @param {?Array} providers String sources of editors to be available in the browser; optional
-    */
-    function _init(providers) {
-        var scripts = [].concat(LiveEditorRemoteDriver, providers || []);
-
-        // cache dependencies for reuse when a re-init is required (ex: after a page refresh)
-        _cache.dependencies = scripts;
-
-        $(exports).triggerHandler('init');
-
-        return _call(scripts.join(';'));
     }
 
     exports.init    = _init;
