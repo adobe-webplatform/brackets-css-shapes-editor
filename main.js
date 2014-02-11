@@ -186,6 +186,8 @@ define(function (require, exports, module) {
     function _onActiveEditorChange() {
         if (currentEditor) {
             $(currentEditor).off("cursorActivity change", _constructModel);
+            LiveEditorDriver.remove();
+            model.reset();
         }
         
         currentEditor = EditorManager.getActiveEditor();
