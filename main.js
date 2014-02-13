@@ -21,19 +21,20 @@
  */
 
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/*global define, $, brackets */
+/*global define, $, brackets, PathUtils */
 
 define(function (require, exports, module) {
     "use strict";
 
-    var DocumentManager     = brackets.getModule("document/DocumentManager"),
-        EditorManager       = brackets.getModule("editor/EditorManager"),
-        CSSUtils            = brackets.getModule("language/CSSUtils"),
-        LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
-        Inspector           = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
-        Model               = require("Model"),
-        LiveEditorDriver    = require("LiveEditorLocalDriver");
-    
+    var DocumentManager         = brackets.getModule("document/DocumentManager"),
+        EditorManager           = brackets.getModule("editor/EditorManager"),
+        CSSUtils                = brackets.getModule("language/CSSUtils"),
+        LiveDevelopment         = brackets.getModule("LiveDevelopment/LiveDevelopment"),
+        ProjectManager          = brackets.getModule("project/ProjectManager"),
+        Inspector               = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
+        Model                   = require("Model"),
+        LiveEditorDriver        = require("LiveEditorLocalDriver");
+        
     // string source of editor and provider; to be injected in live preview
     var CSSShapesEditor         = require("text!lib/CSSShapesEditor.js"),
         CSSShapesEditorProvider = require("text!lib/CSSShapesEditorProvider.js");
@@ -42,6 +43,9 @@ define(function (require, exports, module) {
     var SUPPORTED_PROPS = ["shape-inside", "shape-outside", "clip-path"];
     
     var currentEditor = EditorManager.getActiveEditor();
+    
+    // stylesheet URLs that are used by the html page in live preview
+    var _relatedStylesheets = [];
     
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
@@ -147,6 +151,44 @@ define(function (require, exports, module) {
             value: editor.document.getRange(range.start, range.end)
         });
     }
+    
+    /*
+        Extracts relative the URLs of all stylesheets 
+        used by the page in Live Preview mode.
+    */
+    function _collectRelatedStylesheets() {
+        if (LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE) {
+            return;
+        }
+        
+        var baseUrl = LiveDevelopment._getServer().getBaseUrl(),
+            stylesheetUrls = LiveDevelopment.agents.css.getStylesheetURLs();
+           
+        // clear the cache
+        _relatedStylesheets.length = 0;
+        
+        if (stylesheetUrls.length) {
+            
+            stylesheetUrls.forEach(function (url) {
+                _relatedStylesheets.push(url.replace(baseUrl, ""));
+            });
+        }
+    }
+    
+    /*
+        Check if the current editor is attached to a stylesheet 
+        used by the page in Live Preview mode.
+        
+        @return {Boolean} true
+    */
+    function _isEditingRelatedStylesheet() {
+        var fullPath = currentEditor.document.file.fullPath,
+            projectPath = ProjectManager.getProjectRoot().fullPath,
+            relativePath = fullPath.replace(projectPath, "");
+            
+        return (_relatedStylesheets.indexOf(relativePath) > -1);
+    }
+
         
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor() {
@@ -164,7 +206,6 @@ define(function (require, exports, module) {
             return;
         }
         
-        // replace value in editor; new value in model likey comes from in-browser editor
         currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
     
@@ -174,15 +215,23 @@ define(function (require, exports, module) {
             return;
         }
         
-        var property = model.get("property");
+        /* 
+            Emit commands to the live editor only if: 
+            - the code editor is focused (hence data comes from input in Brackets)
+            - the code editor is invoked on a stylesheet linked to the page in LivePreview
             
-        if (property) {
-            LiveEditorDriver.update(model);
-        } else {
-            LiveEditorDriver.remove();
+            Checking for this avoids echoing back data received from the live editor.
+            The echoed data might be stale data if live editor is being actively used.
+        */
+        if (EditorManager.getFocusedEditor() && _isEditingRelatedStylesheet()) {
+            if (model.get("property")) {
+                LiveEditorDriver.update(model);
+            } else {
+                LiveEditorDriver.remove();
+            }
         }
     }
-    
+        
     function _onActiveEditorChange() {
         if (currentEditor) {
             $(currentEditor).off("cursorActivity change", _constructModel);
@@ -203,18 +252,23 @@ define(function (require, exports, module) {
             
         case LiveDevelopment.STATUS_INACTIVE:
             LiveEditorDriver.remove();
+            _relatedStylesheets.length = 0;
             break;
         
         case LiveDevelopment.STATUS_ACTIVE:
             
+            // TODO: run this on document edit,
+            // because user may link or add stylesheets while in LiveDevelopment is on
+            _collectRelatedStylesheets();
+            
             // dependencies as strings; to be injected in the live preview page
             var deps = [CSSShapesEditor, CSSShapesEditorProvider];
-
+            
             LiveEditorDriver.init(deps)
                 .then(function () {
-                    // if the cursor is on an editable shape property when turning on live preview,
-                    // also setup a live editor in the browser.
-                    if (model.get("property")) {
+                    // // if the cursor is on an editable shape property when turning on live preview,
+                    // // also setup a live editor in the browser.
+                    if (model.get("property") && _isEditingRelatedStylesheet()) {
                         LiveEditorDriver.setup(model);
                     }
                 });
@@ -224,19 +278,7 @@ define(function (require, exports, module) {
     
     model.on("change", function (e) {
         _updateCodeEditor();
-        
-        /* 
-            Emit update to the live editor only if the code editor is focused,
-            hence data comes from input in Brackets.
-            
-            Checking for this avoids echoing back data received from the live editor.
-            The echoed data might be stale data if live editor is being actively used.
-            
-            Easier to do this, than to check against the history of changes, or timestamp payloads.
-        */
-        if (EditorManager.getFocusedEditor()) {
-            _updateLiveEditor();
-        }
+        _updateLiveEditor();
     });
     
     $(LiveEditorDriver).on("model.update", function (e, data, force) {
