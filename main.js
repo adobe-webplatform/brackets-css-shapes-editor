@@ -21,19 +21,17 @@
  */
 
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/*global define, $, brackets, PathUtils */
+/*global define, $, brackets */
 
 define(function (require, exports, module) {
     "use strict";
 
-    var DocumentManager         = brackets.getModule("document/DocumentManager"),
-        EditorManager           = brackets.getModule("editor/EditorManager"),
-        CSSUtils                = brackets.getModule("language/CSSUtils"),
-        LiveDevelopment         = brackets.getModule("LiveDevelopment/LiveDevelopment"),
-        ProjectManager          = brackets.getModule("project/ProjectManager"),
-        Inspector               = brackets.getModule("LiveDevelopment/Inspector/Inspector"),
-        Model                   = require("Model"),
-        LiveEditorDriver        = require("LiveEditorLocalDriver");
+    var EditorManager       = brackets.getModule("editor/EditorManager"),
+        CSSUtils            = brackets.getModule("language/CSSUtils"),
+        LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
+        ProjectManager      = brackets.getModule("project/ProjectManager"),
+        Model               = require("Model"),
+        LiveEditorDriver    = require("LiveEditorLocalDriver");
         
     // string source of editor and provider; to be injected in live preview
     var CSSShapesEditor         = require("text!lib/CSSShapesEditor.js"),
@@ -189,7 +187,7 @@ define(function (require, exports, module) {
         return (_relatedStylesheets.indexOf(relativePath) > -1);
     }
 
-        
+
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor() {
         var range = model.get("range"),
@@ -231,7 +229,7 @@ define(function (require, exports, module) {
             }
         }
     }
-        
+
     function _onActiveEditorChange() {
         if (currentEditor) {
             $(currentEditor).off("cursorActivity change", _constructModel);
@@ -260,10 +258,10 @@ define(function (require, exports, module) {
             // TODO: run this on document edit,
             // because user may link or add stylesheets while in LiveDevelopment is on
             _collectRelatedStylesheets();
-            
+
             // dependencies as strings; to be injected in the live preview page
             var deps = [CSSShapesEditor, CSSShapesEditorProvider];
-            
+
             LiveEditorDriver.init(deps)
                 .then(function () {
                     // // if the cursor is on an editable shape property when turning on live preview,
