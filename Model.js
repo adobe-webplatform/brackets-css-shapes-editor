@@ -38,15 +38,6 @@ define(function (require, exports, module) {
             _props = {},
             _events = {};
             
-        function _trigger(eventName, details) {
-            var callbacks = _events[eventName];
-            if (callbacks.length) {
-                callbacks.forEach(function (cb) {
-                    cb.call(this, details);
-                });
-            }
-        }
-        
         function _set(obj, silent) {
             var hasChanged = false,
                 k;
@@ -65,7 +56,7 @@ define(function (require, exports, module) {
             }
             
             if (silent !== true && hasChanged) {
-                _trigger("change", _props);
+                $(this).triggerHandler("change", [_props]);
             }
         }
         
@@ -80,18 +71,13 @@ define(function (require, exports, module) {
                 return _props[key];
             },
             
-            on: function (eventName, fn) {
-                _events[eventName] = _events[eventName] || [];
-                _events[eventName].push(fn);
-            },
-            
             reset: function (silent) {
                 
                 // assign a clone of the initial properties
                 _props = JSON.parse(JSON.stringify(_initial));
                 
                 if (!silent) {
-                    _trigger("change", _props);
+                    $(this).triggerHandler("change", [_props]);
                 }
             }
         };
