@@ -159,9 +159,10 @@ define(function (require, exports, module) {
             return;
         }
         
+        // FIXME: replace with LiveDevelopment.getServerBaseUrl()
         var baseUrl = LiveDevelopment._getServer().getBaseUrl(),
             stylesheetUrls = LiveDevelopment.agents.css.getStylesheetURLs();
-           
+
         // clear the cache
         _relatedStylesheets.length = 0;
         
