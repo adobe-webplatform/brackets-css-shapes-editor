@@ -262,6 +262,29 @@ define(function (require, exports, module) {
         _relatedStylesheets = _collectRelatedStylesheets();
 
         LiveEditorDriver.init(_remoteEditors);
+        $(LiveEditorDriver).on("update.model", function (e, data, force) {
+
+            /*
+                Ignore model updates from live editor if the user is still typing in the code editor.
+
+                The code editor and live editor in live preview cannot be both focused at the same time;
+                state updates from live editor are likely echoes after syncing with the code editor.
+                
+                Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
+
+                ---
+
+                If there is a request to force a model update, circumvent this.
+                
+                A forced update is required when leveraging the live editor to infer coordinates.
+                @example circle() -> circle(50%, 50%, 50%)
+            */
+            if (EditorManager.getFocusedEditor() && !force) {
+                return;
+            }
+
+            model.set(data);
+        });
     }
 
     function _teardown() {
@@ -271,6 +294,7 @@ define(function (require, exports, module) {
         _relatedStylesheets.length = 0;
 
         LiveEditorDriver.remove();
+        $(LiveEditorDriver).off("update.model");
     }
 
     function _onLiveDevelopmentStatusChange(event, status) {
@@ -286,28 +310,6 @@ define(function (require, exports, module) {
             break;
         }
     }
-
-    $(LiveEditorDriver).on("update.model", function (e, data, force) {
-
-        /*
-            If the user is still typing in the code editor, refuse to update the model
-            (and then the code editor) as a result of the live editor's state change.
-
-            If the code editor is focused, the live editor in live preview cannot also be focused;
-            state updates coming from there are just recent updates from the code editor.
-
-            Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
-
-            ---
-
-            If there is a request to force a model update, circumvent this.
-        */
-        if (EditorManager.getFocusedEditor() && !force) {
-            return;
-        }
-
-        model.set(data);
-    });
 
     $(LiveDevelopment).on("statusChange", _onLiveDevelopmentStatusChange);
 
