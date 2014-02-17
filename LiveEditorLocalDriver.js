@@ -51,7 +51,7 @@ define(function (require, exports, module) {
 
         // misc storage; used in reconnect scenario
         _cache = {};
-    
+        
     /*
         Evaluate the given expression in the context of the live preview page.
         Returns a promise. Fails the promise if the inspector is not connected.
@@ -135,7 +135,7 @@ define(function (require, exports, module) {
 
         // notify Brackets so it can update the code editor
         if (hasChanged || data.forceUpdate) {
-            $(exports).triggerHandler("model.update", [_model, data.forceUpdate]);
+            $(exports).triggerHandler("update.model", [_model, data.forceUpdate]);
         }
     }
     
