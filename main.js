@@ -162,8 +162,7 @@ define(function (require, exports, module) {
             return;
         }
 
-        // FIXME: replace with LiveDevelopment.getServerBaseUrl()
-        var baseUrl = LiveDevelopment._getServer().getBaseUrl(),
+        var baseUrl = LiveDevelopment.getServerBaseUrl(),
             stylesheetUrls = LiveDevelopment.agents.css.getStylesheetURLs(),
             results = [];
 
