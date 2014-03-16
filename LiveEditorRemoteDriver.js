@@ -122,6 +122,7 @@
             _activeEditor = undefined;
         }
 
+        _target.style[_model.property] = '';
         _model = null;
     }
 
