@@ -44,6 +44,52 @@
         _emptyShapeRE = /(polygon|circle|rectangle|ellipse)\(\s*\)/i;
 
     /*
+        Returns true if the element's computed style
+        contains the provided property/value CSS rule.
+
+        @param {HTMLElement} element
+        @param {String} property CSS property
+        @param {String} valuem CSS property value
+
+        @return {Boolean}
+    */
+    function _hasPropertyValue(element, property, value) {
+        var result = false,
+            style, test, testStyle;
+
+        /*
+            Using a dummy test element with the given CSS rule to get an accurate
+            computed style value because the browser automatically expands shorthands.
+
+            @example:
+            circle() -> circle(closest-side at 50% 50%)
+            ellipse() -> ellipse(closest-side closest-side at 50% 50%)
+
+            Also helps avoid false negatives due to whitespace in value.
+
+            @example:
+            circle(50%) === circle(  50%  )
+        */
+        test = document.createElement('div');
+        test.style.position = 'absolute';
+        test.style.display = 'none';
+        test.style[property] = value;
+        document.body.appendChild(test);
+
+        testStyle = window.getComputedStyle(test);
+        style = window.getComputedStyle(element, null);
+
+        if (style[property] && (style[property] === testStyle[property])) {
+            result = true;
+        }
+
+        // cleanup
+        test.parentNode.removeChild(test);
+
+        return result;
+    }
+
+    /*
         Setup an editor for a specific CSS property of an element using data in model.
         Editors must be registered with _registerProvider()
 
@@ -75,6 +121,21 @@
 
         if (!_target) {
             console.warn("No element matching selector: " + model.selector);
+            return;
+        }
+
+        /*
+            Naively checks if the given css value exists on the element matched by the selector
+
+            Migitates problem scenarios:
+            - selector is found in media query which does not match current page view
+            - multiple duplicate selectors in the origin stylesheet, but not editing the one which applies last on the page
+        */
+        if (!_hasPropertyValue(_target, model.property, model.value)){
+            console.error('style mismatch!');
+            console.log('expected: '+ model.value);
+            console.log('actual: '+ window.getComputedStyle(_target, null)[model.property]);
+            _remove();
             return;
         }
 
