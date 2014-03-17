@@ -29,6 +29,7 @@ define(function (require, exports, module) {
     var EditorManager       = brackets.getModule("editor/EditorManager"),
         CSSUtils            = brackets.getModule("language/CSSUtils"),
         LiveDevelopment     = brackets.getModule("LiveDevelopment/LiveDevelopment"),
+        CSSAgent            = brackets.getModule("LiveDevelopment/Agents/CSSAgent"),
         ProjectManager      = brackets.getModule("project/ProjectManager"),
         Model               = require("Model"),
         LiveEditorDriver    = require("LiveEditorLocalDriver");
@@ -154,30 +155,6 @@ define(function (require, exports, module) {
     }
 
     /*
-        Extracts relative the URLs of all stylesheets
-        used by the page in Live Preview mode.
-    */
-    function _collectRelatedStylesheets() {
-        if (LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE) {
-            return;
-        }
-
-        var baseUrl = LiveDevelopment.getServerBaseUrl(),
-            stylesheetUrls = LiveDevelopment.agents.css.getStylesheetURLs(),
-            results = [];
-
-
-        if (stylesheetUrls.length) {
-
-            stylesheetUrls.forEach(function (url) {
-                results.push(url.replace(baseUrl, ""));
-            });
-        }
-
-        return results;
-    }
-
-    /*
         Check if the current editor is attached to a stylesheet
         used by the page in Live Preview mode.
 
@@ -247,18 +224,25 @@ define(function (require, exports, module) {
         }
     }
 
+    /*
+        Extracts relative URL of stylesheet added to the page viewed in LivePreview.
+    */
+    function _onStyleSheetAdded(e, url, header) {
+        var baseUrl = LiveDevelopment.getServerBaseUrl();
+        var relUrl = url.replace(baseUrl, "");
+        _relatedStylesheets.push(relUrl);
+    }
+
     function _setup() {
         $(model).on("change", function (e) {
             _updateCodeEditor();
             _updateLiveEditor();
         });
 
+        $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
+
         $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
         $(EditorManager).triggerHandler("activeEditorChange");
-
-        // TODO: run this on document edit,
-        // because user may link or add stylesheets while in LiveDevelopment is on
-        _relatedStylesheets = _collectRelatedStylesheets();
 
         LiveEditorDriver.init(_remoteEditors);
         $(LiveEditorDriver).on("update.model", function (e, data, force) {
@@ -268,13 +252,13 @@ define(function (require, exports, module) {
 
                 The code editor and live editor in live preview cannot be both focused at the same time;
                 state updates from live editor are likely echoes after syncing with the code editor.
-                
+
                 Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
 
                 ---
 
                 If there is a request to force a model update, circumvent this.
-                
+
                 A forced update is required when leveraging the live editor to infer coordinates.
                 @example circle() -> circle(50%, 50%, 50%)
             */
@@ -289,6 +273,7 @@ define(function (require, exports, module) {
     function _teardown() {
         $(model).off('change');
         $(EditorManager).off("activeEditorChange");
+        $(CSSAgent).off("styleSheetAdded");
 
         _relatedStylesheets.length = 0;
 
@@ -297,14 +282,26 @@ define(function (require, exports, module) {
     }
 
     function _onLiveDevelopmentStatusChange(event, status) {
-
         switch (status) {
 
         case LiveDevelopment.STATUS_ACTIVE:
             _setup();
             break;
 
-        case LiveDevelopment.STATUS_INACTIVE:
+        case LiveDevelopment.STATUS_LOADING_AGENTS:
+            /*
+                Collects stylesheets on first page load of the LiveDevelopment mode.
+
+                Navigations through other pages while LiveDevelopment is on do not cause reloading of agents,
+                so LiveDevelopment.STATUS_LOADING_AGENTS is not reached again. For those cases, reusing this method in _setup().
+
+                Can't use this only in _setup() because on the first run
+                the 'styleSheetAdded' events will have already triggered before reaching LiveDevelopment.STATUS_ACTIVE.
+            */
+            $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
+            break;
+
+        default:
             _teardown();
             break;
         }
