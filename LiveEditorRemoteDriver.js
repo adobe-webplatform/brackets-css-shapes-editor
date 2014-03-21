@@ -132,6 +132,7 @@
             - multiple duplicate selectors in the origin stylesheet, but not editing the one which applies last on the page
         */
         if (!_hasPropertyValue(_target, model.property, model.value)){
+            // @see getMatchedStylesForNode
             console.error('style mismatch!');
             console.log('expected: '+ model.value);
             console.log('actual: '+ window.getComputedStyle(_target, null)[model.property]);
