@@ -49,6 +49,8 @@ define(function (require, exports, module) {
 
     var _currentEditor = EditorManager.getActiveEditor();
 
+    var _isDriverReady = false;
+
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
         property: null,
@@ -221,6 +223,7 @@ define(function (require, exports, module) {
 
         if (_currentEditor) {
             $(_currentEditor).on("cursorActivity change", _constructModel);
+            $(_currentEditor).triggerHandler("cursorActivity");
         }
     }
 
@@ -244,7 +247,10 @@ define(function (require, exports, module) {
         $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
         $(EditorManager).triggerHandler("activeEditorChange");
 
-        LiveEditorDriver.init(_remoteEditors);
+        LiveEditorDriver.init(_remoteEditors).then(function(){
+          _isDriverReady = true;
+        });
+
         $(LiveEditorDriver).on("update.model", function (e, data, force) {
 
             /*
@@ -271,6 +277,10 @@ define(function (require, exports, module) {
     }
 
     function _teardown() {
+        if (!_isDriverReady){
+          return;
+        }
+
         $(model).off('change');
         $(EditorManager).off("activeEditorChange");
         $(CSSAgent).off("styleSheetAdded");
@@ -279,9 +289,12 @@ define(function (require, exports, module) {
 
         LiveEditorDriver.remove();
         $(LiveEditorDriver).off("update.model");
+
+        _isDriverReady = false;
     }
 
     function _onLiveDevelopmentStatusChange(event, status) {
+
         switch (status) {
 
         case LiveDevelopment.STATUS_ACTIVE:
@@ -301,7 +314,9 @@ define(function (require, exports, module) {
             $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
             break;
 
-        default:
+        case LiveDevelopment.STATUS_CONNECTING:
+        case LiveDevelopment.STATUS_INACTIVE:
+        case LiveDevelopment.STATUS_ERROR:
             _teardown();
             break;
         }

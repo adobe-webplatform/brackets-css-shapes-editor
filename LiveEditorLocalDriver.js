@@ -51,7 +51,7 @@ define(function (require, exports, module) {
 
         // misc storage; used in reconnect scenario
         _cache = {};
-        
+
     /*
         Evaluate the given expression in the context of the live preview page.
         Returns a promise. Fails the promise if the inspector is not connected.
@@ -81,7 +81,7 @@ define(function (require, exports, module) {
 
         return deferred.promise();
     }
-    
+
     /*
         Inject remote live editor driver and any specified editor providers.
         @param {?Array} providers String sources of editors to be available in the browser; optional
@@ -113,7 +113,7 @@ define(function (require, exports, module) {
         var expr = _namespace + ".remove()";
         return _call(expr);
     }
-    
+
     function _whenGetRemoteModel(response) {
         if (!response || !response.value || typeof response.value !== "string") {
             throw new TypeError("Invalid result from remote driver .getModel(). Expected JSON string, got:" + response.value);
@@ -138,7 +138,7 @@ define(function (require, exports, module) {
             $(exports).triggerHandler("update.model", [_model, data.forceUpdate]);
         }
     }
-    
+
     /*
         Handle failed promises for eval calls in the inspected page.
         If the error is likely because _namespace was missing, attempt to reconnect.
@@ -151,7 +151,7 @@ define(function (require, exports, module) {
             return _remove();
         }
     }
-    
+
     function _stopSyncLoop() {
         window.clearInterval(_syncInterval);
     }
@@ -173,7 +173,7 @@ define(function (require, exports, module) {
     function _startSyncLoop() {
         _syncInterval = window.setInterval(_onSyncTick, _syncFrequency);
     }
-    
+
     /*
         Send instructions to setup a live editor in the live preview page
         using the selector, css property and css value in the given model.
