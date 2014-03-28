@@ -38,8 +38,8 @@ define(function (require, exports, module) {
     var SUPPORTED_PROPS = ["shape-inside", "shape-outside", "clip-path"];
 
     // string source of editor and provider
-    var CSSShapesEditor         = require("text!lib/CSSShapesEditor.js"),
-        CSSShapesEditorProvider = require("text!lib/CSSShapesEditorProvider.js");
+    var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),
+        CSSShapesEditorProvider = require("text!thirdparty/CSSShapesEditorProvider.js");
 
     // dependencies to be injected in the HTML page in LivePreview
     var _remoteEditors = [CSSShapesEditor, CSSShapesEditorProvider];

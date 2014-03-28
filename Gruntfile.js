@@ -2,11 +2,11 @@
 /*global module, require */
 
 module.exports = function (grunt) {
-  
+
     'use strict';
-  
+
     require('load-grunt-tasks')(grunt);
-   
+
     var pkg = grunt.file.readJSON("package.json");
 
     grunt.initConfig({
@@ -15,18 +15,18 @@ module.exports = function (grunt) {
             files: ['./{,*/}*.js'],
             tasks: ['jshint']
         },
-        
+
         jshint: {
             options: {
                 jshintrc: '.jshintrc'
             },
             // lint all files, ignore the built output from https://github.com/adobe-webplatform/css-shapes-editor
             all: [
-                './{,*/}*.js', '!./lib/CSSShapesEditor.js'
+          './{,*/}*.js', '!./thirdparty/CSSShapesEditor.js'
             ]
         }
-        
+
     });
-    
-    grunt.registerTask('default', ['jshint']); 
+
+    grunt.registerTask('default', ['jshint']);
 };
