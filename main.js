@@ -247,8 +247,8 @@ define(function (require, exports, module) {
         $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
         $(EditorManager).triggerHandler("activeEditorChange");
 
-        LiveEditorDriver.init(_remoteEditors).then(function(){
-          _isDriverReady = true;
+        LiveEditorDriver.init(_remoteEditors).then(function () {
+            _isDriverReady = true;
         });
 
         $(LiveEditorDriver).on("update.model", function (e, data, force) {
@@ -277,8 +277,8 @@ define(function (require, exports, module) {
     }
 
     function _teardown() {
-        if (!_isDriverReady){
-          return;
+        if (!_isDriverReady) {
+            return;
         }
 
         $(model).off('change');

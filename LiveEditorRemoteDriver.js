@@ -21,7 +21,7 @@
  */
 
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50, browser: true */
-/*global _onValueChange: false */
+/*global _onValueChange: false, _remove: false */
 
 (function () {
     "use strict";
@@ -55,7 +55,9 @@
     */
     function _hasPropertyValue(element, property, value) {
         var result = false,
-            style, test, testStyle;
+            style,
+            test,
+            testStyle;
 
         /*
             Using a dummy test element with the given CSS rule to get an accurate
@@ -131,11 +133,11 @@
             - selector is found in media query which does not match current page view
             - multiple duplicate selectors in the origin stylesheet, but not editing the one which applies last on the page
         */
-        if (!_hasPropertyValue(_target, model.property, model.value)){
+        if (!_hasPropertyValue(_target, model.property, model.value)) {
             // @see getMatchedStylesForNode
-            console.error('style mismatch!');
-            console.log('expected: '+ model.value);
-            console.log('actual: '+ window.getComputedStyle(_target, null)[model.property]);
+            console.error('Style mismatch!');
+            console.log('expected: ' + model.value);
+            console.log('actual: ' + window.getComputedStyle(_target, null)[model.property]);
             _remove();
             return;
         }
