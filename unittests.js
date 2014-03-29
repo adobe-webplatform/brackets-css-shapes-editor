@@ -35,6 +35,7 @@ define(function (require, exports, module) {
         testContentMatchPositive    = require("text!unittest-files/match-positive.css"),
         testContentMatchNegative    = require("text!unittest-files/match-negative.css"),
         testContentMatchEmbedded    = require("text!unittest-files/match-embedded.html"),
+        Model                       = require("Model"),
         main                        = require("main");
 
     describe("CSS Shapes Editor", function(){
@@ -45,6 +46,99 @@ define(function (require, exports, module) {
             // mutates main.model
             main._constructModel({ target: testEditor });
         }
+
+        describe("Model", function () {
+            var model,
+                scope = {
+                    onChange: function () {}
+                }
+
+            beforeEach(function () {
+                model = new Model({key: "value"});
+                spyOn(scope, "onChange");
+                $(model).on("change", scope.onChange);
+            });
+
+            afterEach(function () {
+                $(model).off("change", scope.onChange);
+                model = null;
+                // Jasmine spies are cleared automatically
+            });
+
+            it("should be defined", function () {
+                expect(model).toBeDefined();
+            });
+
+            it("should have getter", function () {
+                expect(model.get("key")).toEqual("value");
+            });
+
+            it("should add new key with setter", function () {
+                function setter(){
+                    model.set({"other": "value"});
+                }
+                expect(setter).not.toThrow();
+                expect(model.get("other")).toEqual("value");
+            });
+
+            it("should update existing key", function () {
+                model.set({"key": "new"});
+                expect(model.get("key")).toEqual("new");
+            });
+
+            it("should throw change event on setter", function () {
+                model.set({"other": "value"});
+                expect(scope.onChange).toHaveBeenCalled();
+            });
+
+            it("should not thow change event when updated with duplicate", function () {
+                model.set({"key": "value"});
+                expect(scope.onChange).not.toHaveBeenCalled();
+            });
+
+            it("should not thow change event on setter if asked to be silent", function () {
+                var silent = true;
+                model.set({"other": "value"}, silent);
+
+                expect(scope.onChange).not.toHaveBeenCalled();
+            });
+
+            it("should throw error if updated with string", function () {
+                function setWithString(){
+                    model.set("key", "value");
+                }
+
+                expect(setWithString).toThrow();
+            });
+
+            it("should throw error if updated with null", function () {
+                function setWithNull(){
+                    model.set(null);
+                }
+
+                expect(setWithNull).toThrow();
+            });
+
+            it("should reset model", function () {
+                var orig = model.get("key");
+
+                model.set({"key": "new"});
+                expect(model.get("key")).toEqual("new");
+
+                model.reset();
+                expect(model.get("key")).toEqual(orig);
+            });
+
+            it("should throw change event on reset", function () {
+                model.reset();
+                expect(scope.onChange).toHaveBeenCalled();
+            });
+
+            it("should not throw change event on reset if asked to be silent", function () {
+                model.reset(true);
+                expect(scope.onChange).not.toHaveBeenCalled();
+            });
+        });
 
         describe("Get range for CSS value", function () {
 
