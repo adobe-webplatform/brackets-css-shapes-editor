@@ -30,6 +30,8 @@ define(function (require, exports, module) {
     // Modules from the SpecRunner window
     var SpecRunnerUtils             = brackets.getModule("spec/SpecRunnerUtils"),
         KeyEvent                    = brackets.getModule("utils/KeyEvent"),
+        testStyles                  = require("text!unittest-files/style.css"),
+        testHTML                    = require("text!unittest-files/index.html"),
         testContentMatchPositive    = require("text!unittest-files/match-positive.css"),
         testContentMatchNegative    = require("text!unittest-files/match-negative.css"),
         testContentMatchEmbedded    = require("text!unittest-files/match-embedded.html"),
@@ -63,7 +65,7 @@ define(function (require, exports, module) {
               expect(range).toEqual(expected)
           }
 
-          it("should get range for empty circle() starting at begining", function() {
+          it("should get range for empty circle() starting at begining", function () {
               var pos =  {line: 6, ch: 19 };
               var expected = {
                   start: {line: 6, ch: 17 },
@@ -73,7 +75,7 @@ define(function (require, exports, module) {
               testGetRangeAt(pos, expected);
           })
 
-          it("should get range for empty circle() starting at end", function() {
+          it("should get range for empty circle() starting at end", function () {
               var pos =  {line: 6, ch: 27 };
               var expected = {
                   start: {line: 6, ch: 17 },
@@ -83,7 +85,7 @@ define(function (require, exports, module) {
               testGetRangeAt(pos, expected);
           })
 
-          it("should get range for empty circle() with trimmed whitespace", function() {
+          it("should get range for empty circle() with trimmed whitespace", function () {
               var pos =  {line: 6, ch: 19 };
               var expected = {
                   start: {line: 6, ch: 18 },
@@ -93,7 +95,7 @@ define(function (require, exports, module) {
               testGetRangeAt(pos, expected, true);
           })
 
-          it("should get range for full-notation polygon() starting from arbitrary position", function() {
+          it("should get range for full-notation polygon() starting from arbitrary position", function () {
               var pos =  {line: 15, ch: 55 };
               var expected = {
                   start: {line: 15, ch: 17 },
@@ -210,7 +212,7 @@ define(function (require, exports, module) {
             });
         });
 
-        describe("Negative match CSS Shapes-like values", function(){
+        describe("Negative match CSS Shapes-like values", function (){
 
             beforeEach(function () {
                 var mock = SpecRunnerUtils.createMockEditor(testContentMatchNegative, "css");
@@ -246,7 +248,7 @@ define(function (require, exports, module) {
             });
         });
 
-        describe("Find selector in embedded <style> blocks", function(){
+        describe("Find selector in embedded <style> blocks", function (){
 
             beforeEach(function () {
                 var mock = SpecRunnerUtils.createMockEditor(testContentMatchEmbedded, "html");
@@ -279,6 +281,68 @@ define(function (require, exports, module) {
                 constructModelAtPos(21, 22);
                 expect(main.model.get("selector")).toBe("#content");
             });
+
+        });
+
+        describe("Update the code editor", function () {
+            beforeEach(function () {
+                var mock = SpecRunnerUtils.createMockEditor(testStyles, "css");
+                testDocument = mock.doc;
+                testEditor = mock.editor;
+
+                // hijack current editor, which is normally setup by _onActiveEditorChange();
+                // it is used inside _updateCodeEditor()
+                main._setCurrentEditor(testEditor);
+            });
+
+            afterEach(function () {
+                SpecRunnerUtils.destroyMockEditor(testDocument);
+                testEditor = null;
+                testDocument = null;
+            });
+
+            it("should update property value", function () {
+                var origValue = "circle(100px at 0 0)";
+                var newValue  = "circle(100px at 50% 50%)";
+                spyOn(testDocument, 'replaceRange').andCallThrough();
+
+                constructModelAtPos(7, 18);
+                expect(main.model.get("value")).toBe(origValue);
+
+                // change the model and update the code editor with it
+                main.model.set({"value": newValue });
+                main._updateCodeEditor(main.model);
+
+                constructModelAtPos(7, 18);
+                expect(main.model.get("value")).toBe(newValue);
+                expect(testDocument.replaceRange).toHaveBeenCalled();
+            });
+
+            it("should not update value if duplicate", function () {
+                var origValue = "circle(100px at 0 0)";
+                spyOn(testDocument, 'replaceRange');
+
+                constructModelAtPos(7, 18);
+                expect(main.model.get("value")).toBe(origValue);
+
+                main.model.set({"value": origValue });
+                main._updateCodeEditor(main.model);
+
+                expect(testDocument.replaceRange).not.toHaveBeenCalled();
+            });
+
+            it("should not update value if range is falsy", function () {
+                spyOn(testDocument, 'replaceRange');
+
+                constructModelAtPos(7, 18);
+                expect(main.model.get("range")).toBeDefined();
+
+                main.model.set({"range": undefined });
+                main._updateCodeEditor(main.model);
+
+                expect(testDocument.replaceRange).not.toHaveBeenCalled();
+            });
+
 
         });
     });
