@@ -172,7 +172,7 @@ define(function (require, exports, module) {
     }
 
     // use the model to update the Brackets text editor property value
-    function _updateCodeEditor() {
+    function _updateCodeEditor(model) {
         var range = model.get("range"),
             value = model.get("value"),
             rangeText;
@@ -191,7 +191,7 @@ define(function (require, exports, module) {
     }
 
     // use the model to update the in-browser editor
-    function _updateLiveEditor() {
+    function _updateLiveEditor(model) {
         if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE) {
             return;
         }
@@ -238,9 +238,9 @@ define(function (require, exports, module) {
     }
 
     function _setup() {
-        $(model).on("change", function (e) {
-            _updateCodeEditor();
-            _updateLiveEditor();
+        $(model).on("change", function () {
+            _updateCodeEditor(model);
+            _updateLiveEditor(model);
         });
 
         $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
