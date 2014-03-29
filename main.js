@@ -62,13 +62,14 @@ define(function (require, exports, module) {
         Returns the range that wraps the CSS value at the given pos.
         Assumes pos is within or adjacent to a CSS value (between : and ; or })
 
+        @param {!Editor} editor
         @param {!{line:number, ch:number}} pos
         @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
         @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
-    function _getRangeForCSSValueAt(pos, trimWhitespace) {
+    function _getRangeForCSSValueAt(editor, pos, trimWhitespace) {
         // TODO support multi-line values
-        var line    = _currentEditor.document.getLine(pos.line),
+        var line    = editor.document.getLine(pos.line),
             start   = pos.ch,
             end     = pos.ch,
             value;
@@ -138,7 +139,7 @@ define(function (require, exports, module) {
             return;
         }
 
-        range = _getRangeForCSSValueAt(selection.start, true);
+        range = _getRangeForCSSValueAt(editor, selection.start, true);
 
         model.set({
             selector: selector,
