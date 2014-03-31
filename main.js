@@ -284,7 +284,7 @@ define(function (require, exports, module) {
 
         $(model).off('change');
         $(EditorManager).off("activeEditorChange");
-        $(CSSAgent).off("styleSheetAdded");
+        $(CSSAgent).off("styleSheetAdded", _onStyleSheetAdded);
 
         _relatedStylesheets.length = 0;
 
