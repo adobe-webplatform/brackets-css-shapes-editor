@@ -49,7 +49,7 @@ define(function (require, exports, module) {
 
     var _currentEditor = EditorManager.getActiveEditor();
 
-    var _isDriverReady = false;
+    var _isFirstLaunch = false;
 
     // Stores state to sync between code editor and in-browser editor
     var model = new Model({
@@ -204,9 +204,10 @@ define(function (require, exports, module) {
             Checking for this avoids echoing back data received from the live editor.
             The echoed data might be stale data if live editor is being actively used.
         */
-        if (EditorManager.getFocusedEditor() && _isEditingRelatedStylesheet()) {
+        if ((_isFirstLaunch || EditorManager.getFocusedEditor()) && _isEditingRelatedStylesheet()) {
             if (model.get("property")) {
                 LiveEditorDriver.update(model);
+                _isFirstLaunch = false;
             } else {
                 LiveEditorDriver.remove();
             }
@@ -244,12 +245,14 @@ define(function (require, exports, module) {
         });
 
         $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
-
         $(EditorManager).on("activeEditorChange", _onActiveEditorChange);
-        $(EditorManager).triggerHandler("activeEditorChange");
 
         LiveEditorDriver.init(_remoteEditors).then(function () {
-            _isDriverReady = true;
+
+            // Force a first-pass through the workflow after the page loads.
+            // This will turn on the shape editor if the cursor was focused on a supported property
+            _isFirstLaunch = true;
+            $(EditorManager).triggerHandler("activeEditorChange");
         });
 
         $(LiveEditorDriver).on("update.model", function (e, data, force) {
@@ -278,20 +281,14 @@ define(function (require, exports, module) {
     }
 
     function _teardown() {
-        if (!_isDriverReady) {
-            return;
-        }
-
         $(model).off('change');
-        $(EditorManager).off("activeEditorChange");
+        $(EditorManager).off("activeEditorChange", _onActiveEditorChange);
         $(CSSAgent).off("styleSheetAdded", _onStyleSheetAdded);
 
         _relatedStylesheets.length = 0;
 
         LiveEditorDriver.remove();
         $(LiveEditorDriver).off("update.model");
-
-        _isDriverReady = false;
     }
 
     function _onLiveDevelopmentStatusChange(event, status) {
