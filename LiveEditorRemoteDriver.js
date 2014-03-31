@@ -159,12 +159,17 @@
     }
 
     function _onValueChange(value) {
+
+        // TODO: find out why Chrome reports false positive support for prefix-less clip-path, but only works with prefix
+        // TODO: revert back to using _model.property
+        var property = (_model.property === 'clip-path') ? '-webkit-clip-path' : _model.property;
+
         if (!_target || !value) {
             return;
         }
 
         // update the selector target's style
-        _target.style[_model.property] = value;
+        _target.style[property] = value;
 
         /*
            If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
