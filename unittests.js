@@ -35,6 +35,7 @@ define(function (require, exports, module) {
         testContentMatchPositive    = require("text!unittest-files/match-positive.css"),
         testContentMatchNegative    = require("text!unittest-files/match-negative.css"),
         testContentMatchEmbedded    = require("text!unittest-files/match-embedded.html"),
+        LiveEditorLocalDriver       = require("LiveEditorLocalDriver"),
         Model                       = require("Model"),
         main                        = require("main");
 
@@ -398,7 +399,7 @@ define(function (require, exports, module) {
             it("should update property value", function () {
                 var origValue = "circle(100px at 0 0)";
                 var newValue  = "circle(100px at 50% 50%)";
-                spyOn(testDocument, 'replaceRange').andCallThrough();
+                spyOn(testDocument, "replaceRange").andCallThrough();
 
                 constructModelAtPos(7, 18);
                 expect(main.model.get("value")).toBe(origValue);
@@ -414,7 +415,7 @@ define(function (require, exports, module) {
 
             it("should not update value if duplicate", function () {
                 var origValue = "circle(100px at 0 0)";
-                spyOn(testDocument, 'replaceRange');
+                spyOn(testDocument, "replaceRange");
 
                 constructModelAtPos(7, 18);
                 expect(main.model.get("value")).toBe(origValue);
@@ -426,7 +427,7 @@ define(function (require, exports, module) {
             });
 
             it("should not update value if range is falsy", function () {
-                spyOn(testDocument, 'replaceRange');
+                spyOn(testDocument, "replaceRange");
 
                 constructModelAtPos(7, 18);
                 expect(main.model.get("range")).toBeDefined();
@@ -436,6 +437,56 @@ define(function (require, exports, module) {
 
                 expect(testDocument.replaceRange).not.toHaveBeenCalled();
             });
+        });
+
+        describe("LiveEditor Driver - Mock Workflow", function () {
+            beforeEach(function () {
+                var mock = SpecRunnerUtils.createMockEditor(testStyles, "css");
+                testDocument = mock.doc;
+                testEditor = mock.editor;
+
+                // hijack current editor, which is normally setup by _onActiveEditorChange();
+                // it is used inside _updateCodeEditor()
+                main._setCurrentEditor(testEditor);
+            });
+
+            afterEach(function () {
+                SpecRunnerUtils.destroyMockEditor(testDocument);
+                testEditor = null;
+                testDocument = null;
+                main._teardown();
+            });
+
+            it("should call init() when LivePreview is turned on", function () {
+                var deferred = $.Deferred();
+                spyOn(LiveEditorLocalDriver, "init").andReturn(deferred.promise());
+
+                main._setup();
+
+                // expect to inject dependencies;
+                expect(LiveEditorLocalDriver.init).toHaveBeenCalled();
+            });
+
+            it("should call remove() when LivePreview is turned off", function () {
+                var deferred = $.Deferred();
+                spyOn(LiveEditorLocalDriver, "remove").andReturn(deferred.promise());
+
+                main._setup();
+                main._teardown();
+
+                expect(LiveEditorLocalDriver.remove).toHaveBeenCalled();
+            });
+
+            it("should call remove() when LivePreview is turned off", function () {
+                var deferred = $.Deferred();
+                spyOn(LiveEditorLocalDriver, "remove").andReturn(deferred.promise());
+
+                main._setup();
+                main._teardown();
+
+                expect(LiveEditorLocalDriver.remove).toHaveBeenCalled();
+            });
+
         });
 
         describe("Live Preview Workflow", function () {
@@ -554,11 +605,10 @@ define(function (require, exports, module) {
                 runs(function () {
                     expect(LiveDevelopment.status).toBe(LiveDevelopment.STATUS_ACTIVE);
 
-                    var doc = DocumentManager.getOpenDocumentForPath(tempDir + "/style.css");
-
                     var editor = EditorManager.getCurrentFullEditor();
                     var range = editor.document.getRange({ line: 7, ch: 17}, { line: 7, ch: 37});
-                    expect(range).toEqual('circle(100px at 0 0)');
+
+                    expect(range).toEqual("circle(100px at 0 0)");
 
                     testWindow.brackets.test.Inspector.Runtime.evaluate.reset();
 

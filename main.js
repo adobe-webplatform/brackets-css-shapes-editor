@@ -173,6 +173,7 @@ define(function (require, exports, module) {
 
     // use the model to update the Brackets text editor property value
     function _updateCodeEditor(model) {
+
         var range = model.get("range"),
             value = model.get("value"),
             rangeText;
@@ -329,4 +330,6 @@ define(function (require, exports, module) {
     exports._setCurrentEditor = function (editor) { _currentEditor = editor; };
     exports._updateCodeEditor = _updateCodeEditor;
     exports._updateLiveEditor = _updateLiveEditor;
+    exports._setup = _setup;
+    exports._teardown = _teardown;
 });
