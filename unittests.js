@@ -22,14 +22,14 @@
  */
 
 /*jslint vars: true, plusplus: true, devel: true, browser: true, nomen: true, indent: 4, maxerr: 50 */
-/*global define, describe, it, expect, beforeEach, afterEach, waits, waitsFor, runs, $, brackets, waitsForDone, spyOn, KeyEvent */
+/*global define, describe, it, xit, expect, beforeEach, afterEach, waits, waitsFor, runs, $, brackets, waitsForDone, spyOn, beforeFirst, afterLast */
 
 define(function (require, exports, module) {
     "use strict";
 
     // Modules from the SpecRunner window
     var SpecRunnerUtils             = brackets.getModule("spec/SpecRunnerUtils"),
-        KeyEvent                    = brackets.getModule("utils/KeyEvent"),
+        FileUtils                   = brackets.getModule("file/FileUtils"),
         testStyles                  = require("text!unittest-files/style.css"),
         testHTML                    = require("text!unittest-files/index.html"),
         testContentMatchPositive    = require("text!unittest-files/match-positive.css"),
@@ -436,8 +436,144 @@ define(function (require, exports, module) {
 
                 expect(testDocument.replaceRange).not.toHaveBeenCalled();
             });
+        });
+
+        describe("Live Preview Workflow", function () {
+
+            // The following are all loaded from the test window
+            var DocumentManager,
+                EditorManager,
+                Inspector,
+                LiveDevelopment;
+
+            // var testPath    = FileUtils.getNativeBracketsDirectoryPath() + "/extensions/dev/shapes/unittest-files/",
+            // same files from the extension's ./unittests-files
+            // TODO: figure out how to reference files outside the /test/ folder
+            var testPath    = SpecRunnerUtils.getTestPath("/spec/CSSShapesEditor-test-files"),
+                tempDir     = SpecRunnerUtils.getTempDirectory(),
+                testWindow;
 
 
+            function isOpenInBrowser(doc, agents) {
+                return (doc && doc.url && agents && agents.network && agents.network.wasURLRequested(doc.url));
+            }
+
+            beforeFirst(function () {
+                SpecRunnerUtils.createTempDirectory();
+
+                SpecRunnerUtils.createTestWindowAndRun(this, function (w) {
+                    testWindow      = w;
+                    DocumentManager = testWindow.brackets.test.DocumentManager;
+                    EditorManager   = testWindow.brackets.test.EditorManager;
+                    Inspector       = testWindow.brackets.test.Inspector;
+                    LiveDevelopment = testWindow.brackets.test.LiveDevelopment;
+                });
+            });
+
+            afterLast(function () {
+                runs(function () {
+                    testWindow      = null;
+                    LiveDevelopment = null;
+                    // ProjectManager       = null;
+                    SpecRunnerUtils.closeTestWindow();
+                });
+
+                SpecRunnerUtils.removeTempDirectory();
+            });
+
+            beforeEach(function () {
+                // verify live dev isn't currently active
+                expect(LiveDevelopment.status).toBe(LiveDevelopment.STATUS_INACTIVE);
+
+                // copy files to temp directory
+                runs(function () {
+                    waitsForDone(SpecRunnerUtils.copyPath(testPath, tempDir), "copy temp files");
+                });
+
+                // open project
+                runs(function () {
+                    SpecRunnerUtils.loadProjectInTestWindow(tempDir);
+                });
+            });
+
+            afterEach(function () {
+                runs(function () {
+                    waitsForDone(LiveDevelopment.close(), "Waiting for browser to become inactive", 10000);
+                });
+
+                testWindow.closeAllFiles();
+            });
+
+            xit("should load shape editor dependencies into LivePreview", function () {
+
+                // Spy on eval calls to Inspector; used to inject dependencies and setup/update/remove remote editor
+                spyOn(testWindow.brackets.test.Inspector.Runtime, "evaluate").andCallThrough();
+
+                //open project files
+                runs(function () {
+                    waitsForDone(SpecRunnerUtils.openProjectFiles(["index.html", "style.css"]), "SpecRunnerUtils.openProjectFiles index.html, style.css", 1000);
+                });
+
+                // start live dev
+                runs(function () {
+                    waitsForDone(LiveDevelopment.open(), "LiveDevelopment.open()", 15000);
+                });
+
+                runs(function () {
+                    expect(LiveDevelopment.status).toBe(LiveDevelopment.STATUS_ACTIVE);
+
+                    testWindow.brackets.test.Inspector.Runtime.evaluate("window._LD_CSS_EDITOR", function (resp) {
+                        expect(resp.result.type).toBeDefined();
+                    });
+                });
+
+                runs(function () {
+                    testWindow.brackets.test.Inspector.Runtime.evaluate("window.CSSShapesEditor", function (resp) {
+                        expect(resp.result.type).toBeDefined();
+                    });
+                });
+            });
+
+            xit("should setup and update remote editor", function () {
+
+                spyOn(testWindow.brackets.test.Inspector.Runtime, "evaluate").andCallThrough();
+
+                runs(function () {
+                    waitsForDone(SpecRunnerUtils.openProjectFiles(["index.html"]), "SpecRunnerUtils.openProjectFiles index.html, style.css", 1000);
+                });
+
+                runs(function () {
+                    waitsForDone(SpecRunnerUtils.openProjectFiles(["style.css"]), "SpecRunnerUtils.openProjectFiles index.html, style.css", 1000);
+                });
+
+                // start live dev
+                runs(function () {
+                    waitsForDone(LiveDevelopment.open(), "LiveDevelopment.open()", 15000);
+                });
+
+                runs(function () {
+                    expect(LiveDevelopment.status).toBe(LiveDevelopment.STATUS_ACTIVE);
+
+                    var doc = DocumentManager.getOpenDocumentForPath(tempDir + "/style.css");
+
+                    var editor = EditorManager.getCurrentFullEditor();
+                    var range = editor.document.getRange({ line: 7, ch: 17}, { line: 7, ch: 37});
+                    expect(range).toEqual('circle(100px at 0 0)');
+
+                    testWindow.brackets.test.Inspector.Runtime.evaluate.reset();
+
+                    // set the cursor on the property
+                    editor.focus();
+                    editor.setCursorPos(7, 20);
+                    $(editor).triggerHandler("change");
+
+                    // TODO: replace range and watch for window._LD_CSS_EDITOR.update()
+                    // doc.replaceRange("Live Preview in ", {line: 11, ch: 33});
+
+                    //TODO: figure out why jasmine doesn't see window._LD_CSS_EDITOR.setup() called
+                    expect(testWindow.brackets.test.Inspector.Runtime.evaluate).toHaveBeenCalled();
+                });
+            });
         });
     });
 });
