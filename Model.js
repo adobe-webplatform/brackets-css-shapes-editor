@@ -45,7 +45,8 @@ define(function (require, exports, module) {
 
         var _initial = properties || {},
             _props = {},
-            _events = {};
+            _events = {},
+            _$self = $(this);
 
         /**
           Sets or updates properties on the model.
@@ -72,7 +73,7 @@ define(function (require, exports, module) {
             }
 
             if (silent !== true && hasChanged) {
-                $(this).triggerHandler("change", [_props]);
+                _$self.triggerHandler("change", [_props]);
             }
         }
 
@@ -102,7 +103,7 @@ define(function (require, exports, module) {
                 _props = JSON.parse(JSON.stringify(_initial));
 
                 if (!silent) {
-                    $(this).triggerHandler("change", [_props]);
+                    _$self.triggerHandler("change", [_props]);
                 }
             }
         };
