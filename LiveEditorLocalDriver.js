@@ -31,33 +31,36 @@ define(function (require, exports, module) {
 
     var LiveEditorRemoteDriver = require("text!LiveEditorRemoteDriver.js"),
 
-        // namspace in the inspected page where live editor methods live
+        /** @type {String} namspace in the inspected page where live editor methods live */
         _namespace = "window._LD_CSS_EDITOR",
 
-        // snapshot of remote model from live editor in the inspected page (live preivew)
+        /** @type {Object} snapshot of remote model from live editor in the inspected page (live preivew) */
         _model = {},
 
-        // true if live editor instance was set up
+        /** @type {Boolean} true if live editor instance was set up */
         _hasEditor = false,
 
-        // milliseconds interval after which to sync the remote model with the local model snapshot
+        /** @type {Number} milliseconds interval after which to sync the remote model with the local _model snapshot */
         _syncFrequency = 100,
 
-        // result of setInterval()
+        /** @type {Interval} result of setInterval() */
         _syncInterval,
 
-        // number of attepts to reconnect after an error
+        /** @type {Number} number of attepts to reconnect after an error */
         _retryCount = 5,
 
-        // misc storage; used in reconnect scenario
+        /** @type {Object} misc storage; used in reconnect scenario */
         _cache = {};
 
-    /*
-        Evaluate the given expression in the context of the live preview page.
-        Returns a promise. Fails the promise if the inspector is not connected.
+    /**
+      @private
+      Evaluate the given expression in the context of the pave in LivePreview.
+      Returns a promise.
+      Fails the promise if the inspector is not connected.
+      Fails the promise if an error was raised in the LivePreview.
 
-        @param {String} expression JavaScript code to be evaluated
-        @return {Promise}
+      @param {!String} expression JavaScript code to be evaluated
+      @return {Promise}
     */
     function _call(expression) {
         var deferred = $.Deferred();
@@ -82,9 +85,12 @@ define(function (require, exports, module) {
         return deferred.promise();
     }
 
-    /*
-        Inject remote live editor driver and any specified editor providers.
-        @param {?Array} providers String sources of editors to be available in the browser; optional
+    /**
+      @private
+      Inject remote live editor driver and any specified editor providers.
+      The remote live editor driver mirrors most of the local live editor driver API
+      to provide an interface to the in-browser live editor.
+      @param {?Array} providers String sources of editors to be available in the browser; optional
     */
     function _init(providers) {
         var scripts = [].concat(LiveEditorRemoteDriver, providers || []);
@@ -98,22 +104,30 @@ define(function (require, exports, module) {
     }
 
     /*
-        Send instructions to remove the live editor from the live preview page.
-
-        @return {Object/Promise}
+      @private
+      Send instructions to remove the live editor from the page in LivePreview.
+      @return {Promise}
     */
     function _remove() {
         if (_hasEditor === false) {
             return;
         }
 
-        console.log("REMOVE");
-
         _reset();
         var expr = _namespace + ".remove()";
         return _call(expr);
     }
 
+    /**
+      @private
+      Handle the succesful promise of getting the model from the browser.
+
+      Dispatches these events:
+        update.model -- when the model received differs from the local snapshot
+
+      @throws {TypeError} if the promise result is not a string.
+      @param {String} response JSON stringified object with CSS property, value
+    */
     function _whenGetRemoteModel(response) {
         if (!response || !response.value || typeof response.value !== "string") {
             throw new TypeError("Invalid result from remote driver .getModel(). Expected JSON string, got:" + response.value);
@@ -139,9 +153,13 @@ define(function (require, exports, module) {
         }
     }
 
-    /*
-        Handle failed promises for eval calls in the inspected page.
-        If the error is likely because _namespace was missing, attempt to reconnect.
+    /**
+      @private
+      Handle failed promises for eval() calls to the inspected page.
+      If the error is likely because a method was missing, attempt to reconnect.
+      It might happen because of a page refresh
+
+      @param {Object} result promise result
     */
     function _whenRemoteCallFailed(result) {
         if (result && result.description && /Cannot call method/.test(result.description)) {
@@ -152,11 +170,17 @@ define(function (require, exports, module) {
         }
     }
 
+    /**
+      @private
+      Stop polling for the remote model
+    */
     function _stopSyncLoop() {
         window.clearInterval(_syncInterval);
     }
-    /*
-        Reset flags and clear snapshot of remote model
+
+    /**
+      @private
+      Reset flags and clear snapshot of remote model
     */
     function _reset() {
         _stopSyncLoop();
@@ -164,25 +188,33 @@ define(function (require, exports, module) {
         _model = {};
     }
 
+    /**
+      @private
+      Attempt to get the model from the page in LivePreview.
+    */
     function _onSyncTick() {
         console.log("SYNC");
         var expr = _namespace + ".getModel()";
         _call(expr).then(_whenGetRemoteModel).fail(_whenRemoteCallFailed);
     }
 
+    /**
+      @private
+      Poll for the remote model
+    */
     function _startSyncLoop() {
         _syncInterval = window.setInterval(_onSyncTick, _syncFrequency);
     }
 
-    /*
-        Send instructions to setup a live editor in the live preview page
-        using the selector, css property and css value in the given model.
+    /**
+      Send instructions to setup a live editor in the page in LivePreview
+      using the selector, css property and css value in the given model.
 
-        If an editor for the current model already exists, then update it.
-        The model here is an instance of Model, not an object literal like _model.
+      If an editor for the current model already exists, then update it.
+      The model here is an instance of Model, not an object literal, like the local _model.
 
-        @param {Object/Model} model Instance of Model obj with attributes from code editor
-        @return {Object/Promise}
+      @param {!Model} model Instance of Model with attributes from code editor
+      @return {Promise}
     */
     function _setup(model) {
 
@@ -210,15 +242,15 @@ define(function (require, exports, module) {
             .fail(_whenRemoteCallFailed);
     }
 
-    /*
-        Send instructions to update the existing live editor in
-        the live preview page with the state of the given model.
+    /**
+      Send instructions to update the existing live editor in
+      the page in LivePreview with the state of the given model.
 
-        The model here is an instance of Model, not an object literal like _model.
+      The model here is an instance of Model, not an object literal, like _model.
 
-        @param {Object/Model} model Instance of Model obj with attributes from code editor.
-        @return {Object/Promise}
-
+      @throws {TypeError} if the input model is falsy.
+      @param {!Model} model Instance of Model obj with attributes from code editor.
+      @return {Promise}
     */
     function _update(model) {
         if (!model) {
@@ -239,7 +271,7 @@ define(function (require, exports, module) {
 
         // Asking to update a different element / property? Setup a new editor
         if (attr.selector !== _model.selector || attr.property !== _model.property) {
-            console.warn("Updating for a different editor");
+            console.log("Updating for a different editor");
 
             return _remove().then(function () { return _setup(model); });
         }
@@ -249,16 +281,17 @@ define(function (require, exports, module) {
         return _call(expr).fail(_whenRemoteCallFailed);
     }
 
-    /*
-        When a user refreshes the live preview window, the injected live editor
-        and its dependecies get lost.
+    /**
+      @private
+      When a user refreshes the live preview window, the injected live editor
+      and its dependecies get lost.
 
-        This method attempts to re-inject them. It tries
-        a number of times before giving up.
+      This method attempts to re-inject them. It tries
+      a number of times before giving up.
 
-        After a successful reconnect, it sets up the editor in the last cached state.
+      After a successful reconnect, it sets up the editor in the last cached state.
 
-        @return {Promise}
+      @return {Promise}
     */
     function _reconnect() {
         var deferred = $.Deferred();
@@ -270,7 +303,7 @@ define(function (require, exports, module) {
         }
 
         if (_retryCount === 0) {
-            console.warn("Gave up reconnecting");
+            console.log("Gave up reconnecting");
             return deferred.reject();
         }
 

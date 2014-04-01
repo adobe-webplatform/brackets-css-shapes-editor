@@ -26,32 +26,34 @@
 (function () {
     "use strict";
 
-        // Hash with available editors for given properties.
-        // @see _registerProvider()
+        /** @type {Object} Object literal with available editors for given properties. @see _registerProvider() */
     var _providers = {},
-        // current active editor for model.property
+        /** @type {CSSShapesEditor} current active editor for model.property */
         _activeEditor,
-        // element matched by model.selector
+        /** @type {HTMLElement} element matched by model.selector */
         _target = null,
-        /*
-            Hash with selector, CSS property and value.
-            Will be updated by _setup() and _onValueChange()
-            Will be synced to Brackets via _getModel() to update text in code editor.
-            @example {selector: 'body', property: 'shape-inside', value: 'circle()' }
+        /**
+          @type {Object} Object literal with selector, CSS property and value.
+
+          Will be updated by _setup() and _onValueChange()
+          Will be synced to Brackets via _getModel() to update text in code editor.
+
+          @example {selector: 'body', property: 'shape-inside', value: 'circle()' }
         */
         _model = null,
-        // regular expression for shape values with no coordinates
+        /** @type {RegEx} regular expression for shape values with no coordinates **/
         _emptyShapeRE = /(polygon|circle|rectangle|ellipse)\(\s*\)/i;
 
-    /*
-        Returns true if the element's computed style
-        contains the provided property/value CSS rule.
+    /**
+      @private
+      Returns true if the element's computed style
+      contains the provided property/value CSS rule.
 
-        @param {HTMLElement} element
-        @param {String} property CSS property
-        @param {String} valuem CSS property value
+      @param {!HTMLElement} element
+      @param {!String} property CSS property
+      @param {!String} valuem CSS property value
 
-        @return {Boolean}
+      @return {Boolean}
     */
     function _hasPropertyValue(element, property, value) {
         var result = false,
@@ -59,19 +61,17 @@
             test,
             testStyle;
 
-        /*
-            Using a dummy test element with the given CSS rule to get an accurate
-            computed style value because the browser automatically expands shorthands.
-
-            @example:
-            circle() -> circle(closest-side at 50% 50%)
-            ellipse() -> ellipse(closest-side closest-side at 50% 50%)
-
-            Also helps avoid false negatives due to whitespace in value.
-
-            @example:
-            circle(50%) === circle(  50%  )
-        */
+        // Using a dummy test element with the given CSS rule to get an accurate
+        // computed style value because the browser automatically expands shorthands.
+        //
+        // @example:
+        // circle() -> circle(closest-side at 50% 50%)
+        // ellipse() -> ellipse(closest-side closest-side at 50% 50%)
+        //
+        // Also helps avoid false negatives due to whitespace in value.
+        //
+        // @example:
+        // circle(50%) === circle(  50%  )
         test = document.createElement('div');
         test.style.position = 'absolute';
         test.style.display = 'none';
@@ -92,20 +92,22 @@
     }
 
     /*
-        Setup an editor for a specific CSS property of an element using data in model.
-        Editors must be registered with _registerProvider()
+      Setup an editor for a specific CSS property of an element using data in model.
+      Editors must be registered with _registerProvider()
 
-        @param {Object} model Hash with data:
-            {
-                // selector to match an element for editing
-                selector: {String},
+      @throws {TypeError} if input model is falsy or does not contain property
 
-                // CSS property to edit
-                property: {String},
+      @param {!Object} model object literal with data:
+          {
+              // selector to match an element for editing
+              selector: {String},
 
-                // Initial value for editor
-                value: {String}
-            }
+              // CSS property to edit
+              property: {String},
+
+              // Initial value for editor
+              value: {String}
+          }
     */
     function _setup(model) {
         if (!model || !model.property) {
@@ -113,37 +115,32 @@
         }
 
         if (!_providers[model.property]) {
-            console.warn("No editor provided for property: " + model.property);
+            console.log("No editor provided for property: " + model.property);
             return;
         }
 
-        // find the first matching element from the given selector
+        // Find the first matching element from the given selector
         // TODO: implement querySelectorAll() navigation through multiple results
         _target = document.querySelector(model.selector);
 
         if (!_target) {
-            console.warn("No element matching selector: " + model.selector);
+            console.log("No element matching selector: " + model.selector);
             return;
         }
 
-        /*
-            Naively checks if the given css value exists on the element matched by the selector
-
-            Migitates problem scenarios:
-            - selector is found in media query which does not match current page view
-            - multiple duplicate selectors in the origin stylesheet, but not editing the one which applies last on the page
-        */
+        // Naively checks if the given css value exists on the element matched by the selector
+        //
+        // Migitates problem scenarios:
+        // - selector is found in media query which does not match current page view
+        // - multiple duplicate selectors in the origin stylesheet, but not editing the one which applies last on the page
         if (!_hasPropertyValue(_target, model.property, model.value)) {
             // @see getMatchedStylesForNode
-            console.error('Style mismatch!');
+            console.log('Style mismatch!');
             console.log('expected: ' + model.value);
             console.log('actual: ' + window.getComputedStyle(_target, null)[model.property]);
             _remove();
             return;
         }
-
-        // reset everything
-        // _remove();
 
         // store the data from Brackets editor
         _model = model;
@@ -158,10 +155,18 @@
         _activeEditor.onValueChange(_onValueChange);
     }
 
+    /*
+      Handler for value "change" events from the live editor which was setup on the page.
+      Cache the value into the local model, which will be polled for by LiveEditorLocalDriver
+      to sync with Brackets editor
+
+      @param {!String} value
+    */
     function _onValueChange(value) {
 
-        // TODO: find out why Chrome reports false positive support for prefix-less clip-path, but only works with prefix
-        // TODO: revert back to using _model.property
+        // Chrome reports false positive support for prefix-less clip-path, but only works with prefix
+        // TODO: enforce -webkit-clip-path in main.js SUPPORTED_PROPERTIES
+        // and revert back to using _model.property after https://github.com/adobe/brackets/pull/7373
         var property = (_model.property === 'clip-path') ? '-webkit-clip-path' : _model.property;
 
         if (!_target || !value) {
@@ -171,20 +176,21 @@
         // update the selector target's style
         _target.style[property] = value;
 
-        /*
-           If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
-           the CSSShapesEditor will automatically infer coordintates from the element and return a usable shape value.
-
-           Here, we set a flag to force the code editor to accept this inferred default shape value.
-           By default, the code editor ignores shape values coming from the live editor if the user is still typing.
-           Setting this flag to true circumvents that behavior.
-        */
+        // If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
+        // the CSSShapesEditor will automatically infer coordintates from the element and return a usable shape value.
+        //
+        // Here, we set a flag to force the code editor to accept this inferred default shape value.
+        // By default, the code editor ignores shape values coming from the live editor if the user is still typing.
+        // Setting this flag to true circumvents that behavior.
         _model.forceUpdate = _emptyShapeRE.test(_model.value);
 
         // update the model. will be requested by Brackets to sync code editor
         _model.value = value;
     }
 
+    /**
+      Remove the live editor.
+    */
     function _remove() {
         if (_activeEditor) {
             _activeEditor.remove();
@@ -195,39 +201,48 @@
         _model = null;
     }
 
+    /**
+      Update the live editor with the given data.
+      @param {Object} model Object literal with CSS property, value, selector.
+    */
     function _update(model) {
         _activeEditor.update(model);
     }
 
+    /**
+      Expose the cached model data updated after live editor "change" events.
+      LiveEditorLocalDriver polls this to sync model with Brackets editor
+      @param {Object} model Object literal with CSS property, value, selector.
+    */
     function _getModel() {
         return JSON.stringify(_model);
     }
 
     /*
-        Register an editor for the given CSS property.
-        This allows support for custom editors for any CSS property.
+      Register an editor for the given CSS property.
+      This allows support for custom editors for any CSS property.
 
-        Editor will be invoked if the given property
-        matches model.property in _LD_CSS_EDITOR.setup(model).
+      Editor will be invoked if the given property
+      matches model.property in _LD_CSS_EDITOR.setup(model).
 
-        @param {String} property CSS property
-        @param {Object} editor Handler for the property.
+      @param {!String} property CSS property
+      @param {!Object} editor Editor for the property.
 
-        Provided editors MUST implement the follwing interface:
-        {
-            // turn on editor on specified target HTMLElement.
-            // picks-up necessary args from model
-            setup: function (target, model) {},
+      Provided editors MUST implement the follwing interface:
+      {
+          // turn on editor on specified target HTMLElement.
+          // picks-up necessary args from model
+          setup: function (target, model) {},
 
-            // update the editor state given the provided model
-            update: function (model) {},
+          // update the editor state given the provided model
+          update: function (model) {},
 
-            // turn off the editor and remove any scaffolding
-            remove: function () {},
+          // turn off the editor and remove any scaffolding
+          remove: function () {},
 
-            // sets a callback to be called with the new value
-            onValueChange: function (callback) {}
-        }
+          // sets a callback to be called with the new value
+          onValueChange: function (callback) {}
+      }
     */
     function _registerProvider(property, editor) {
         // TODO: check for interface conformity

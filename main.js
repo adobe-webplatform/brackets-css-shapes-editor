@@ -23,6 +23,31 @@
 /*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
 /*global define, $, brackets */
 
+/**
+ * The CSS Shapes Editor extension adds a GUI for editing shapes when LivePreview mode is on,
+ * and the cursor is focused on a CSS Shapes property value, like polygon(), circle() or ellipse();
+ * Other properties, such as border-box and inset() is not yet supported.
+ *
+ * The code for the shapes editor lives in ./thirdparty/CSSShapesEditor.js
+ * @see https://github.com/adobe-webplatform/css-shapes-editor/
+ *
+ * The shapes editor turns on over the first element matched by the selector associated to the
+ * CSS Declaration Block being edited. The editor will not turn on if the focused CSS Rule does
+ * not apply, either because of media queries not matching or selector specificity being overturned.
+ *
+ * On LiveDevelopment.STATUS_ACTIVE, the CSS Shapes Editor library from /thirdparty/, and its dependencies
+ * are injected into the page in LivePreview. A mirror LiveEditorRemoteDriver.js is also injected.
+ * This will be driven by LiveEditorLocalDriver.js
+
+ * A Model with the currently focused CSS property, value and their range is built on every cursor
+ * navigation or change in the document. This model will be passed onto the injected LiveEditorRemoteDriver.js
+ * and will be kept in sync to mirror the changes between the Brackets code editor and the CSS Shapes Editor
+ * from the LivePreview page.
+ *
+ * This extension can be extended to handle other CSS properties by adding other GUI editor & dependencies
+ * to the _remoteEditors array and mention which properties they operate on in the SUPPORTED_PROPS array.
+ * See ./thirdparty/CSSShapesEditorProvider.js for the minimal API other editors must provide.
+ */
 define(function (require, exports, module) {
     "use strict";
 
@@ -37,35 +62,37 @@ define(function (require, exports, module) {
     // Update if you add editors for new properties
     var SUPPORTED_PROPS = ["shape-inside", "shape-outside", "clip-path"];
 
-    // string source of editor and provider
+    // String source of editor and provider
     var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),
         CSSShapesEditorProvider = require("text!thirdparty/CSSShapesEditorProvider.js");
 
-    // dependencies to be injected in the HTML page in LivePreview
+    /** @type {Array} Dependencies as strings to be injected in the HTML page in LivePreview */
     var _remoteEditors = [CSSShapesEditor, CSSShapesEditorProvider];
 
-    // stylesheet URLs that are used by the active HTML page in LivePreview;
+    /** @type {Array} Stylesheet URLs that are used by the active HTML page in LivePreview */
     var _relatedStylesheets = [];
 
+    /** @type {Editor} */
     var _currentEditor = EditorManager.getActiveEditor();
 
+    /** @type {Boolean} Flag set to true if the LivePreview has just been turned on */
     var _isFirstLaunch = false;
 
-    // Stores state to sync between code editor and in-browser editor
+    /** @type {Model} Stores state to sync between code editor and in-browser editor */
     var model = new Model({
         property: null,
         value:    null,
         selector: null
     });
 
-    /*
-        Returns the range that wraps the CSS value at the given pos.
-        Assumes pos is within or adjacent to a CSS value (between : and ; or })
-
-        @param {!Editor} editor
-        @param {!{line:number, ch:number}} pos
-        @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
-        @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
+    /**
+    * @private
+    * Returns the range that wraps the CSS value at the given pos.
+    * Assumes pos is within or adjacent to a CSS value (between : and ; or })
+    * @param {!Editor} editor
+    * @param {!{line:number, ch:number}} pos
+    * @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
+    * @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
     function _getRangeForCSSValueAt(editor, pos, trimWhitespace) {
         // TODO: support multi-line values
@@ -88,33 +115,32 @@ define(function (require, exports, module) {
         }
 
         return {
-            // TODO: support multi-line values
             "start": { line: pos.line, ch: start },
             "end": { line: pos.line, ch: end }
         };
     }
 
-    /*
-        Constructs the global model with data if the cursor is on a CSS rule
-        with a property from SUPPORTED_PROPS.
-
-        Adds attributes to the model:
-        {
-            value: {String},    // the CSS value
-            property: {String}, // the CSS property
-            selector: {String}, // the selector associated with the CSS block
-            range: {Object}     // the range in the code editor for the CSS value
-        }
-
-        Resets the existing model if:
-            - the cursor is not on a CSS value;
-            - the css property is not supported; @see SUPPORTED_PROPS
-            - a selector cannot be extracted for the CSS block;
-
-        Model triggers 'change' event if any attribute value has changed since last stored.
-        Does not trigger 'change' event if cursor is just moving inside CSS value.
-
-        @param {Event} e 'change' or 'cursorActivity' event dispatched by editor
+    /**
+    * Constructs the global model with data if the cursor is on a CSS rule
+    * with a property from SUPPORTED_PROPS.
+    *
+    * Adds attributes to the model:
+    *   {
+    *        value: {String},    // the CSS value
+    *        property: {String}, // the CSS property
+    *        selector: {String}, // the selector associated with the CSS block
+    *        range: {Object}     // the range in the code editor for the CSS value
+    *    }
+    *
+    * Resets the existing model if:
+    *  - the cursor is not on a CSS value;
+    *  - the css property is not supported; @see SUPPORTED_PROPS
+    *  - a selector cannot be extracted for the CSS block;
+    *
+    * Model triggers 'change' event if any attribute value has changed since last stored.
+    * Does not trigger 'change' event if cursor is just moving within the same CSS value.
+    *
+    * @param {!Event} e 'change' or 'cursorActivity' event dispatched by editor
     */
     function _constructModel(e) {
         var editor      = e.target,
@@ -145,23 +171,16 @@ define(function (require, exports, module) {
             selector: selector,
             property: info.name,
             range: range,
-            /*
-                Setting value as exact text range;
-
-                Not using info.values.join('') because it may drop some whitespace
-                from comma-separated values sending _updateCodeEditor() into an
-                endless loop because model.value and document.getRange(model.range)
-                will not be equal
-            */
             value: editor.document.getRange(range.start, range.end)
         });
     }
 
-    /*
-        Check if the current editor is attached to a stylesheet
-        used by the page in Live Preview mode.
+    /**
+      @private
+      Check if the current editor is attached to a stylesheet
+      related to the page in LivePreview mode.
 
-        @return {Boolean}
+      @return {Boolean}
     */
     function _isEditingRelatedStylesheet() {
         var fullPath = _currentEditor.document.file.fullPath,
@@ -171,7 +190,12 @@ define(function (require, exports, module) {
         return (_relatedStylesheets.indexOf(relativePath) > -1);
     }
 
-    // use the model to update the Brackets text editor property value
+    /**
+      @private
+      Update the Brackets text editor property value using the given model,
+      which contains the range and the new property value.
+      @param {!Model} model
+    */
     function _updateCodeEditor(model) {
 
         var range = model.get("range"),
@@ -191,20 +215,27 @@ define(function (require, exports, module) {
         _currentEditor.document.replaceRange(value, range.start, range.end, "+");
     }
 
-    // use the model to update the in-browser editor
+    /**
+      @private
+      Send a command to the LiveEditorDriver update the in-browser editor using the given model
+      @param {!Model} model
+    */
     function _updateLiveEditor(model) {
         if (!LiveDevelopment.status || LiveDevelopment.status < LiveDevelopment.STATUS_ACTIVE) {
             return;
         }
 
-        /*
-            Emit commands to the live editor only if:
-            - the code editor is focused (hence data comes from input in Brackets)
-            - the code editor is invoked on a stylesheet linked to the page in LivePreview
 
-            Checking for this avoids echoing back data received from the live editor.
-            The echoed data might be stale data if live editor is being actively used.
-        */
+        // Emit commands to the live editor only if:
+        // - the code editor is focused (hence, data comes from input in Brackets)
+        //   OR
+        // - LivePreview has just started (to immediately show the editor if a shape property is focused)
+        //
+        //   AND
+        // - the code editor is invoked on a stylesheet linked to the page in LivePreview
+        //
+        // Checking for this avoids echoing back data received from the in-browser editor.
+        // The echoed data might be stale if the in-browser editor is being actively used.
         if ((_isFirstLaunch || EditorManager.getFocusedEditor()) && _isEditingRelatedStylesheet()) {
             if (model.get("property")) {
                 LiveEditorDriver.update(model);
@@ -215,6 +246,11 @@ define(function (require, exports, module) {
         }
     }
 
+    /**
+      @private
+      Handle swapping of the currently active editor.
+      Remove in-browser editor, event handlers from old code editor.
+    */
     function _onActiveEditorChange() {
         if (_currentEditor) {
             $(_currentEditor).off("cursorActivity change", _constructModel);
@@ -230,15 +266,36 @@ define(function (require, exports, module) {
         }
     }
 
-    /*
-        Extracts relative URL of stylesheet added to the page viewed in LivePreview.
+    /**
+      @private
+      Handle adding new stylesheet to the page in LivePreview
+      Extracts relative URL of added stylesheet
+      @param {!Event} styleSheetAdded event
+      @param {!String} url of stylesheet
     */
-    function _onStyleSheetAdded(e, url, header) {
+    function _onStyleSheetAdded(e, url) {
         var baseUrl = LiveDevelopment.getServerBaseUrl();
         var relUrl = url.replace(baseUrl, "");
         _relatedStylesheets.push(relUrl);
     }
 
+    /**
+      @private
+      Setup the extension after LiveDevelopment is turned on
+
+      Listen to "change" events to global model of the focused CSS property, its value and its range,
+         to synchronize the Brackets editor and the CSS Shapes Editor, which lives in the page in LivePreview
+
+      Listen to "styleSheetAdded" events of the page currently in LivePreview to track related stylesheets,
+         so we don't edit un-related stylesheets, even if the selector matches.
+
+      Listen to changes of the currently active editor
+
+      Inject the CSS Shapes Editor and its dependencies into the page in LivePreview
+
+      Listen for changes to the model coming from the in-browser editor and synchronize them
+        to the model in Brackets
+    */
     function _setup() {
         $(model).on("change", function () {
             _updateCodeEditor(model);
@@ -251,28 +308,26 @@ define(function (require, exports, module) {
         LiveEditorDriver.init(_remoteEditors).then(function () {
 
             // Force a first-pass through the workflow after the page loads.
-            // This will turn on the shape editor if the cursor was focused on a supported property
+            // This will automatically turn on the shape editor if the cursor was focused on a supported property
             _isFirstLaunch = true;
             $(EditorManager).triggerHandler("activeEditorChange");
         });
 
         $(LiveEditorDriver).on("update.model", function (e, data, force) {
 
-            /*
-                Ignore model updates from live editor if the user is still typing in the code editor.
-
-                The code editor and live editor in live preview cannot be both focused at the same time;
-                state updates from live editor are likely echoes after syncing with the code editor.
-
-                Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
-
-                ---
-
-                If there is a request to force a model update, circumvent this.
-
-                A forced update is required when leveraging the live editor to infer coordinates.
-                @example circle() -> circle(50%, 50%, 50%)
-            */
+            // Ignore model updates from live editor if the user is still typing in the code editor.
+            //
+            // The code editor and live editor in live preview cannot be both focused at the same time;
+            // state updates from live editor are likely echoes after syncing with the code editor.
+            //
+            // Avoids weird state bugs as a result of the frequency of sync loop in LiveEditorDriver.
+            //
+            // ---
+            //
+            // If there is a request to force a model update, circumvent this.
+            //
+            // A forced update is required when leveraging the live editor to infer coordinates.
+            // @example circle() -> circle(50%, 50%, 50%)
             if (EditorManager.getFocusedEditor() && !force) {
                 return;
             }
@@ -281,6 +336,10 @@ define(function (require, exports, module) {
         });
     }
 
+    /**
+      @private
+      Remove all handlers and clean-up after LiveDevelopment is turned off.
+    */
     function _teardown() {
         $(model).off('change');
         $(EditorManager).off("activeEditorChange", _onActiveEditorChange);
@@ -292,6 +351,12 @@ define(function (require, exports, module) {
         $(LiveEditorDriver).off("update.model");
     }
 
+    /**
+      @private
+      Handle change in LiveDevelopment (LivePreview) state
+      @param {!Event} event
+      @param {!Number} status
+    */
     function _onLiveDevelopmentStatusChange(event, status) {
 
         switch (status) {
@@ -301,15 +366,13 @@ define(function (require, exports, module) {
             break;
 
         case LiveDevelopment.STATUS_LOADING_AGENTS:
-            /*
-                Collects stylesheets on first page load of the LiveDevelopment mode.
-
-                Navigations through other pages while LiveDevelopment is on do not cause reloading of agents,
-                so LiveDevelopment.STATUS_LOADING_AGENTS is not reached again. For those cases, reusing this method in _setup().
-
-                Can't use this only in _setup() because on the first run
-                the 'styleSheetAdded' events will have already triggered before reaching LiveDevelopment.STATUS_ACTIVE.
-            */
+            // Collects stylesheets on first page load of the LiveDevelopment mode.
+            //
+            // Navigations through other pages while LiveDevelopment is on do not cause reloading of agents,
+            // so LiveDevelopment.STATUS_LOADING_AGENTS is not reached again. For those cases, reusing this method in _setup().
+            //
+            // Can't use this only in _setup() because on the first run
+            // the 'styleSheetAdded' events will have already triggered before reaching LiveDevelopment.STATUS_ACTIVE.
             $(CSSAgent).on("styleSheetAdded", _onStyleSheetAdded);
             break;
 

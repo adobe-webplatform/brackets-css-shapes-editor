@@ -1,16 +1,16 @@
 /*
  * Copyright (c) 2013 Adobe Systems Incorporated.
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,27 +25,43 @@
 
 define(function (require, exports, module) {
     "use strict";
-    
+
     var _ = brackets.getModule("thirdparty/lodash");
 
+    /**
+      @constructor
+      Lightweight model to set and get data from.
+
+      Dispatches events on change and reset, if not explicitly asked to be silent:
+        change -- when the properties in the model are changed with the setter.
+
+      @param {?Object} properties Object literal with key/values to store as default; optional
+    */
     function Model(properties) {
 
         if (!(this instanceof Model)) {
             return new Model(properties);
         }
-        
+
         var _initial = properties || {},
             _props = {},
             _events = {};
-            
+
+        /**
+          Sets or updates properties on the model.
+
+          @thows {TypeError} if input is falsy or not object
+          @param {!Object} obj Object literal with key/value pairs
+          @param {?Boolean} silent set to false to avoid triggering "change" event
+        */
         function _set(obj, silent) {
             var hasChanged = false,
                 k;
-            
+
             if (!obj || typeof obj !== "object") {
                 throw new TypeError("Invalid input. Expected object with properties, got: " + obj);
             }
-            
+
             for (k in obj) {
                 if (obj.hasOwnProperty(k)) {
                     if (!_.isEqual(_props[k], obj[k])) {
@@ -54,34 +70,43 @@ define(function (require, exports, module) {
                     }
                 }
             }
-            
+
             if (silent !== true && hasChanged) {
                 $(this).triggerHandler("change", [_props]);
             }
         }
-        
+
         if (typeof properties === "object") {
             _set(properties, true);
         }
-        
+
         return {
             set: _set,
-            
+
+            /**
+              Get a property value from the model
+              @param {!String} key
+              @return {undefined/mixed}
+            */
             get: function (key) {
                 return _props[key];
             },
-            
+
+            /**
+              Reset the model to its initial contents
+              @param {?Boolean} silent; if true, will not trigger "change" event
+            */
             reset: function (silent) {
-                
+
                 // assign a clone of the initial properties
                 _props = JSON.parse(JSON.stringify(_initial));
-                
+
                 if (!silent) {
                     $(this).triggerHandler("change", [_props]);
                 }
             }
         };
     }
-    
+
     return Model;
 });
