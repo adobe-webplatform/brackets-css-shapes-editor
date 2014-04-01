@@ -555,7 +555,7 @@ define(function (require, exports, module) {
                 testWindow.closeAllFiles();
             });
 
-            xit("should load shape editor dependencies into LivePreview", function () {
+            it("should load shape editor dependencies into LivePreview", function () {
 
                 // Spy on eval calls to Inspector; used to inject dependencies and setup/update/remove remote editor
                 spyOn(testWindow.brackets.test.Inspector.Runtime, "evaluate").andCallThrough();
