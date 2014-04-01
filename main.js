@@ -68,7 +68,7 @@ define(function (require, exports, module) {
         @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
     function _getRangeForCSSValueAt(editor, pos, trimWhitespace) {
-        // TODO support multi-line values
+        // TODO: support multi-line values
         var line    = editor.document.getLine(pos.line),
             start   = pos.ch,
             end     = pos.ch,
@@ -326,7 +326,7 @@ define(function (require, exports, module) {
     exports.model = model;
     exports._constructModel = _constructModel;
     exports._getRangeForCSSValueAt = _getRangeForCSSValueAt;
-    exports._setCurrentEditor = function(editor) { _currentEditor = editor }
+    exports._setCurrentEditor = function (editor) { _currentEditor = editor; };
     exports._updateCodeEditor = _updateCodeEditor;
     exports._updateLiveEditor = _updateLiveEditor;
 });

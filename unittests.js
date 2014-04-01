@@ -38,10 +38,10 @@ define(function (require, exports, module) {
         Model                       = require("Model"),
         main                        = require("main");
 
-    describe("CSS Shapes Editor", function(){
+    describe("CSS Shapes Editor", function () {
         var testDocument, testEditor;
 
-        function constructModelAtPos (row, col) {
+        function constructModelAtPos(row, col) {
             testEditor.setCursorPos(row, col);
             // mutates main.model
             main._constructModel({ target: testEditor });
@@ -51,7 +51,7 @@ define(function (require, exports, module) {
             var model,
                 scope = {
                     onChange: function () {}
-                }
+                };
 
             beforeEach(function () {
                 model = new Model({key: "value"});
@@ -74,7 +74,7 @@ define(function (require, exports, module) {
             });
 
             it("should add new key with setter", function () {
-                function setter(){
+                function setter() {
                     model.set({"other": "value"});
                 }
                 expect(setter).not.toThrow();
@@ -104,7 +104,7 @@ define(function (require, exports, module) {
             });
 
             it("should throw error if updated with string", function () {
-                function setWithString(){
+                function setWithString() {
                     model.set("key", "value");
                 }
 
@@ -112,7 +112,7 @@ define(function (require, exports, module) {
             });
 
             it("should throw error if updated with null", function () {
-                function setWithNull(){
+                function setWithNull() {
                     model.set(null);
                 }
 
@@ -142,63 +142,63 @@ define(function (require, exports, module) {
 
         describe("Get range for CSS value", function () {
 
-          beforeEach(function () {
-              var mock = SpecRunnerUtils.createMockEditor(testContentMatchPositive, "css");
-              testDocument = mock.doc;
-              testEditor = mock.editor;
-          });
+            beforeEach(function () {
+                var mock = SpecRunnerUtils.createMockEditor(testContentMatchPositive, "css");
+                testDocument = mock.doc;
+                testEditor = mock.editor;
+            });
 
-          afterEach(function () {
-              SpecRunnerUtils.destroyMockEditor(testDocument);
-              testEditor = null;
-              testDocument = null;
-          });
+            afterEach(function () {
+                SpecRunnerUtils.destroyMockEditor(testDocument);
+                testEditor = null;
+                testDocument = null;
+            });
 
-          function testGetRangeAt (pos, expected, trimWhitespace) {
-              var range = main._getRangeForCSSValueAt(testEditor, pos, trimWhitespace || false);
-              expect(range).toEqual(expected)
-          }
+            function testGetRangeAt(pos, expected, trimWhitespace) {
+                var range = main._getRangeForCSSValueAt(testEditor, pos, trimWhitespace || false);
+                expect(range).toEqual(expected);
+            }
 
-          it("should get range for empty circle() starting at begining", function () {
-              var pos =  {line: 6, ch: 19 };
-              var expected = {
-                  start: {line: 6, ch: 17 },
-                  end:   {line: 6, ch: 27 }
-              }
+            it("should get range for empty circle() starting at begining", function () {
+                var pos =  {line: 6, ch: 19 };
+                var expected = {
+                    start: {line: 6, ch: 17 },
+                    end:   {line: 6, ch: 27 }
+                };
 
-              testGetRangeAt(pos, expected);
-          })
+                testGetRangeAt(pos, expected);
+            });
 
-          it("should get range for empty circle() starting at end", function () {
-              var pos =  {line: 6, ch: 27 };
-              var expected = {
-                  start: {line: 6, ch: 17 },
-                  end:   {line: 6, ch: 27 }
-              }
+            it("should get range for empty circle() starting at end", function () {
+                var pos =  {line: 6, ch: 27 };
+                var expected = {
+                    start: {line: 6, ch: 17 },
+                    end:   {line: 6, ch: 27 }
+                };
 
-              testGetRangeAt(pos, expected);
-          })
+                testGetRangeAt(pos, expected);
+            });
 
-          it("should get range for empty circle() with trimmed whitespace", function () {
-              var pos =  {line: 6, ch: 19 };
-              var expected = {
-                  start: {line: 6, ch: 18 },
-                  end:   {line: 6, ch: 26 }
-              }
+            it("should get range for empty circle() with trimmed whitespace", function () {
+                var pos =  {line: 6, ch: 19 };
+                var expected = {
+                    start: {line: 6, ch: 18 },
+                    end:   {line: 6, ch: 26 }
+                };
 
-              testGetRangeAt(pos, expected, true);
-          })
+                testGetRangeAt(pos, expected, true);
+            });
 
-          it("should get range for full-notation polygon() starting from arbitrary position", function () {
-              var pos =  {line: 15, ch: 55 };
-              var expected = {
-                  start: {line: 15, ch: 17 },
-                  end:   {line: 15, ch: 61 }
-              }
+            it("should get range for full-notation polygon() starting from arbitrary position", function () {
+                var pos =  {line: 15, ch: 55 };
+                var expected = {
+                    start: {line: 15, ch: 17 },
+                    end:   {line: 15, ch: 61 }
+                };
 
-              testGetRangeAt(pos, expected);
-          })
-        })
+                testGetRangeAt(pos, expected);
+            });
+        });
 
         /*
           Quick test for shape-like values in Brackets.
@@ -220,12 +220,12 @@ define(function (require, exports, module) {
                 testDocument = null;
             });
 
-            it("should have a default model", function(){
+            it("should have a default model", function () {
                 expect(main.model).toBeDefined();
                 expect(main.model.get("property")).toBe(null);
                 expect(main.model.get("value")).toBe(null);
                 expect(main.model.get("selector")).toBe(null);
-            })
+            });
 
             it("should match shape-inside property", function () {
                 constructModelAtPos(3, 20);
@@ -306,7 +306,7 @@ define(function (require, exports, module) {
             });
         });
 
-        describe("Negative match CSS Shapes-like values", function (){
+        describe("Negative match CSS Shapes-like values", function () {
 
             beforeEach(function () {
                 var mock = SpecRunnerUtils.createMockEditor(testContentMatchNegative, "css");
@@ -342,7 +342,7 @@ define(function (require, exports, module) {
             });
         });
 
-        describe("Find selector in embedded <style> blocks", function (){
+        describe("Find selector in embedded <style> blocks", function () {
 
             beforeEach(function () {
                 var mock = SpecRunnerUtils.createMockEditor(testContentMatchEmbedded, "html");
