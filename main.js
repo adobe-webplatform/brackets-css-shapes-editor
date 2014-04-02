@@ -66,16 +66,16 @@ define(function (require, exports, module) {
     var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),
         CSSShapesEditorProvider = require("text!thirdparty/CSSShapesEditorProvider.js");
 
-    /** @type {Array} Dependencies as strings to be injected in the HTML page in LivePreview */
+    /** @type {array} Dependencies as strings to be injected in the HTML page in LivePreview */
     var _remoteEditors = [CSSShapesEditor, CSSShapesEditorProvider];
 
-    /** @type {Array} Stylesheet URLs that are used by the active HTML page in LivePreview */
+    /** @type {array} Stylesheet URLs that are used by the active HTML page in LivePreview */
     var _relatedStylesheets = [];
 
     /** @type {Editor} */
     var _currentEditor = EditorManager.getActiveEditor();
 
-    /** @type {Boolean} Flag set to true if the LivePreview has just been turned on */
+    /** @type {boolean} Flag set to true if the LivePreview has just been turned on */
     var _isFirstLaunch = false;
 
     /** @type {Model} Stores state to sync between code editor and in-browser editor */
@@ -91,7 +91,7 @@ define(function (require, exports, module) {
     * Assumes pos is within or adjacent to a CSS value (between : and ; or })
     * @param {!Editor} editor
     * @param {!{line:number, ch:number}} pos
-    * @param {?boolean} trimWhitespace Ignore whitepace surrounding css value; optional
+    * @param {boolean=} trimWhitespace Ignore whitepace surrounding css value; optional
     * @return {!start: {line:number, ch:number}, end: {line:number, ch:number}}
     */
     function _getRangeForCSSValueAt(editor, pos, trimWhitespace) {
@@ -126,10 +126,10 @@ define(function (require, exports, module) {
     *
     * Adds attributes to the model:
     *   {
-    *        value: {String},    // the CSS value
-    *        property: {String}, // the CSS property
-    *        selector: {String}, // the selector associated with the CSS block
-    *        range: {Object}     // the range in the code editor for the CSS value
+    *        value: {string},    // the CSS value
+    *        property: {string}, // the CSS property
+    *        selector: {string}, // the selector associated with the CSS block
+    *        range: {object}     // the range in the code editor for the CSS value
     *    }
     *
     * Resets the existing model if:
@@ -140,7 +140,7 @@ define(function (require, exports, module) {
     * Model triggers 'change' event if any attribute value has changed since last stored.
     * Does not trigger 'change' event if cursor is just moving within the same CSS value.
     *
-    * @param {!Event} e 'change' or 'cursorActivity' event dispatched by editor
+    * @param {!event} e 'change' or 'cursorActivity' event dispatched by editor
     */
     function _constructModel(e) {
         var editor      = e.target,
@@ -180,7 +180,7 @@ define(function (require, exports, module) {
       Check if the current editor is attached to a stylesheet
       related to the page in LivePreview mode.
 
-      @return {Boolean}
+      @return {boolean}
     */
     function _isEditingRelatedStylesheet() {
         var fullPath = _currentEditor.document.file.fullPath,
@@ -270,8 +270,8 @@ define(function (require, exports, module) {
       @private
       Handle adding new stylesheet to the page in LivePreview
       Extracts relative URL of added stylesheet
-      @param {!Event} styleSheetAdded event
-      @param {!String} url of stylesheet
+      @param {!event} styleSheetAdded event
+      @param {!string} url of stylesheet
     */
     function _onStyleSheetAdded(e, url) {
         var baseUrl = LiveDevelopment.getServerBaseUrl();
@@ -341,7 +341,7 @@ define(function (require, exports, module) {
       Remove all handlers and clean-up after LiveDevelopment is turned off.
     */
     function _teardown() {
-        $(model).off('change');
+        $(model).off("change");
         $(EditorManager).off("activeEditorChange", _onActiveEditorChange);
         $(CSSAgent).off("styleSheetAdded", _onStyleSheetAdded);
 
@@ -354,8 +354,8 @@ define(function (require, exports, module) {
     /**
       @private
       Handle change in LiveDevelopment (LivePreview) state
-      @param {!Event} event
-      @param {!Number} status
+      @param {!event} event
+      @param {!number} status
     */
     function _onLiveDevelopmentStatusChange(event, status) {
 

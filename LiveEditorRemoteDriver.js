@@ -26,14 +26,14 @@
 (function () {
     "use strict";
 
-        /** @type {Object} Object literal with available editors for given properties. @see _registerProvider() */
+        /** @type {object} Object literal with available editors for given properties. @see _registerProvider() */
     var _providers = {},
         /** @type {CSSShapesEditor} current active editor for model.property */
         _activeEditor,
         /** @type {HTMLElement} element matched by model.selector */
         _target = null,
         /**
-          @type {Object} Object literal with selector, CSS property and value.
+          @type {object} Object literal with selector, CSS property and value.
 
           Will be updated by _setup() and _onValueChange()
           Will be synced to Brackets via _getModel() to update text in code editor.
@@ -50,10 +50,10 @@
       contains the provided property/value CSS rule.
 
       @param {!HTMLElement} element
-      @param {!String} property CSS property
-      @param {!String} valuem CSS property value
+      @param {!string} property CSS property
+      @param {!string} valuem CSS property value
 
-      @return {Boolean}
+      @return {boolean}
     */
     function _hasPropertyValue(element, property, value) {
         var result = false,
@@ -97,16 +97,16 @@
 
       @throws {TypeError} if input model is falsy or does not contain property
 
-      @param {!Object} model object literal with data:
+      @param {!object} model object literal with data:
           {
               // selector to match an element for editing
-              selector: {String},
+              selector: {string},
 
               // CSS property to edit
-              property: {String},
+              property: {string},
 
               // Initial value for editor
-              value: {String}
+              value: {string}
           }
     */
     function _setup(model) {
@@ -160,7 +160,7 @@
       Cache the value into the local model, which will be polled for by LiveEditorLocalDriver
       to sync with Brackets editor
 
-      @param {!String} value
+      @param {!string} value
     */
     function _onValueChange(value) {
 
@@ -203,7 +203,7 @@
 
     /**
       Update the live editor with the given data.
-      @param {Object} model Object literal with CSS property, value, selector.
+      @param {!object} model Object literal with CSS property, value, selector.
     */
     function _update(model) {
         _activeEditor.update(model);
@@ -212,7 +212,6 @@
     /**
       Expose the cached model data updated after live editor "change" events.
       LiveEditorLocalDriver polls this to sync model with Brackets editor
-      @param {Object} model Object literal with CSS property, value, selector.
     */
     function _getModel() {
         return JSON.stringify(_model);
@@ -225,8 +224,8 @@
       Editor will be invoked if the given property
       matches model.property in _LD_CSS_EDITOR.setup(model).
 
-      @param {!String} property CSS property
-      @param {!Object} editor Editor for the property.
+      @param {!string} property CSS property
+      @param {!object} editor Editor for the property.
 
       Provided editors MUST implement the follwing interface:
       {

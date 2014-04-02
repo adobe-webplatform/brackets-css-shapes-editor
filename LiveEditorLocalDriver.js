@@ -31,25 +31,25 @@ define(function (require, exports, module) {
 
     var LiveEditorRemoteDriver = require("text!LiveEditorRemoteDriver.js"),
 
-        /** @type {String} namspace in the inspected page where live editor methods live */
+        /** @type {string} namspace in the inspected page where live editor methods live */
         _namespace = "window._LD_CSS_EDITOR",
 
-        /** @type {Object} snapshot of remote model from live editor in the inspected page (live preivew) */
+        /** @type {object} snapshot of remote model from live editor in the inspected page (live preivew) */
         _model = {},
 
-        /** @type {Boolean} true if live editor instance was set up */
+        /** @type {boolean} true if live editor instance was set up */
         _hasEditor = false,
 
-        /** @type {Number} milliseconds interval after which to sync the remote model with the local _model snapshot */
+        /** @type {number} milliseconds interval after which to sync the remote model with the local _model snapshot */
         _syncFrequency = 100,
 
         /** @type {Interval} result of setInterval() */
         _syncInterval,
 
-        /** @type {Number} number of attepts to reconnect after an error */
+        /** @type {number} number of attepts to reconnect after an error */
         _retryCount = 5,
 
-        /** @type {Object} misc storage; used in reconnect scenario */
+        /** @type {object} misc storage; used in reconnect scenario */
         _cache = {};
 
     /**
@@ -59,7 +59,7 @@ define(function (require, exports, module) {
       Fails the promise if the inspector is not connected.
       Fails the promise if an error was raised in the LivePreview.
 
-      @param {!String} expression JavaScript code to be evaluated
+      @param {!string} expression JavaScript code to be evaluated
       @return {Promise}
     */
     function _call(expression) {
@@ -90,7 +90,7 @@ define(function (require, exports, module) {
       Inject remote live editor driver and any specified editor providers.
       The remote live editor driver mirrors most of the local live editor driver API
       to provide an interface to the in-browser live editor.
-      @param {?Array} providers String sources of editors to be available in the browser; optional
+      @param {array=} providers String sources of editors to be available in the browser; optional
     */
     function _init(providers) {
         var scripts = [].concat(LiveEditorRemoteDriver, providers || []);
@@ -126,7 +126,7 @@ define(function (require, exports, module) {
         update.model -- when the model received differs from the local snapshot
 
       @throws {TypeError} if the promise result is not a string.
-      @param {String} response JSON stringified object with CSS property, value
+      @param {!string} response JSON stringified object with CSS property, value
     */
     function _whenGetRemoteModel(response) {
         if (!response || !response.value || typeof response.value !== "string") {
@@ -159,7 +159,7 @@ define(function (require, exports, module) {
       If the error is likely because a method was missing, attempt to reconnect.
       It might happen because of a page refresh
 
-      @param {Object} result promise result
+      @param {object=} result promise result
     */
     function _whenRemoteCallFailed(result) {
         if (result && result.description && /Cannot call method/.test(result.description)) {

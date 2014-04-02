@@ -35,7 +35,7 @@ define(function (require, exports, module) {
       Dispatches events on change and reset, if not explicitly asked to be silent:
         change -- when the properties in the model are changed with the setter.
 
-      @param {?Object} properties Object literal with key/values to store as default; optional
+      @param {object=} properties Object literal with key/values to store as default; optional
     */
     function Model(properties) {
 
@@ -50,9 +50,9 @@ define(function (require, exports, module) {
         /**
           Sets or updates properties on the model.
 
-          @thows {TypeError} if input is falsy or not object
-          @param {!Object} obj Object literal with key/value pairs
-          @param {?Boolean} silent set to false to avoid triggering "change" event
+          @throws {TypeError} if input is falsy or not object
+          @param {!object} obj Object literal with key/value pairs
+          @param {boolean=} silent set to false to avoid triggering "change" event
         */
         var _set = function (obj, silent) {
             var hasChanged = false,
@@ -85,8 +85,8 @@ define(function (require, exports, module) {
 
             /**
               Get a property value from the model
-              @param {!String} key
-              @return {undefined/mixed}
+              @param {!string} key
+              @return {undefined|*}
             */
             get: function (key) {
                 return _props[key];
@@ -94,7 +94,7 @@ define(function (require, exports, module) {
 
             /**
               Reset the model to its initial contents
-              @param {?Boolean} silent; if true, will not trigger "change" event
+              @param {boolean=} silent; if true, will not trigger "change" event
             */
             reset: function (silent) {
 
