@@ -1,5 +1,5 @@
 .negative-match {
-    -webkit-shape-inside: circle();
+    clip-path: circle();
 /*  shape-inside: circle(); */
     shape-inside: circle;
 }

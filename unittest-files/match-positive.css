@@ -3,7 +3,7 @@
 .foo {
     shape-inside: circle();
     shape-outside: circle();
-    clip-path: circle();
+    -webkit-clip-path: circle();
     shape-inside: circle() ; /* intentional whitespace */
     shape-inside: circle(0 at 0 0);
     shape-inside: circle(0px at 0px 0px);

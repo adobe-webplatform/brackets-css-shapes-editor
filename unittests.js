@@ -244,9 +244,9 @@ define(function (require, exports, module) {
                 expect(main.model.get("property")).toBe("shape-outside");
             });
 
-            it("should match clip-path property", function () {
-                constructModelAtPos(5, 17);
-                expect(main.model.get("property")).toBe("clip-path");
+            it("should match -webkit-clip-path property", function () {
+                constructModelAtPos(5, 25);
+                expect(main.model.get("property")).toBe("-webkit-clip-path");
             });
 
             it("should match empty circle() value", function () {
@@ -321,9 +321,10 @@ define(function (require, exports, module) {
                 testDocument = null;
             });
 
-            it("should not match prefixed shape-inside property", function () {
-                constructModelAtPos(1, 27);
-                expect(main.model.get("property")).not.toBe("-webkit-shape-inside");
+            // clip-path applies to SVG only; this will change in the future
+            it("should not match unprefixed clip-path property", function () {
+                constructModelAtPos(1, 17);
+                expect(main.model.get("property")).not.toBe("clip-path");
             });
 
             it("should not match commented-out shape-inside property", function () {
