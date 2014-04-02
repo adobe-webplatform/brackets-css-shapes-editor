@@ -63,7 +63,7 @@
         var scope = this,
             options = {};
 
-        switch (model.property){
+        switch (model.property) {
         case "shape-inside":
         case "-webkit-shape-inside":
             options.defaultRefBox = "content-box";
