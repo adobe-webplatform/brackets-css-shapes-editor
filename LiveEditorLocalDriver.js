@@ -34,7 +34,7 @@ define(function (require, exports, module) {
         /** @type {string} namspace in the inspected page where live editor methods live */
         _namespace = "window._LD_CSS_EDITOR",
 
-        /** @type {object} snapshot of remote model from live editor in the inspected page (live preivew) */
+        /** @type {Object} snapshot of remote model from live editor in the inspected page (live preivew) */
         _model = {},
 
         /** @type {boolean} true if live editor instance was set up */
@@ -49,7 +49,7 @@ define(function (require, exports, module) {
         /** @type {number} number of attepts to reconnect after an error */
         _retryCount = 5,
 
-        /** @type {object} misc storage; used in reconnect scenario */
+        /** @type {Object} misc storage; used in reconnect scenario */
         _cache = {};
 
     /**
@@ -90,7 +90,7 @@ define(function (require, exports, module) {
       Inject remote live editor driver and any specified editor providers.
       The remote live editor driver mirrors most of the local live editor driver API
       to provide an interface to the in-browser live editor.
-      @param {array=} providers String sources of editors to be available in the browser; optional
+      @param {Array=} providers String sources of editors to be available in the browser; optional
     */
     function _init(providers) {
         var scripts = [].concat(LiveEditorRemoteDriver, providers || []);
@@ -159,7 +159,7 @@ define(function (require, exports, module) {
       If the error is likely because a method was missing, attempt to reconnect.
       It might happen because of a page refresh
 
-      @param {object=} result promise result
+      @param {Object=} result promise result
     */
     function _whenRemoteCallFailed(result) {
         if (result && result.description && /Cannot call method/.test(result.description)) {

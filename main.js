@@ -71,10 +71,10 @@ define(function (require, exports, module) {
     var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),
         CSSShapesEditorProvider = require("text!thirdparty/CSSShapesEditorProvider.js");
 
-    /** @type {array} Dependencies as strings to be injected in the HTML page in LivePreview */
+    /** @type {Array} Dependencies as strings to be injected in the HTML page in LivePreview */
     var _remoteEditors = [CSSShapesEditor, CSSShapesEditorProvider];
 
-    /** @type {array} Stylesheet URLs that are used by the active HTML page in LivePreview */
+    /** @type {Array} Stylesheet URLs that are used by the active HTML page in LivePreview */
     var _relatedStylesheets = [];
 
     /** @type {Editor} */
@@ -134,7 +134,7 @@ define(function (require, exports, module) {
     *        value: {string},    // the CSS value
     *        property: {string}, // the CSS property
     *        selector: {string}, // the selector associated with the CSS block
-    *        range: {object}     // the range in the code editor for the CSS value
+    *        range: {Object}     // the range in the code editor for the CSS value
     *    }
     *
     * Resets the existing model if:
@@ -145,7 +145,7 @@ define(function (require, exports, module) {
     * Model triggers 'change' event if any attribute value has changed since last stored.
     * Does not trigger 'change' event if cursor is just moving within the same CSS value.
     *
-    * @param {!event} e 'change' or 'cursorActivity' event dispatched by editor
+    * @param {!Event} e 'change' or 'cursorActivity' event dispatched by editor
     */
     function _constructModel(e) {
         var editor      = e.target,
@@ -275,7 +275,7 @@ define(function (require, exports, module) {
       @private
       Handle adding new stylesheet to the page in LivePreview
       Extracts relative URL of added stylesheet
-      @param {!event} styleSheetAdded event
+      @param {!Event} styleSheetAdded event
       @param {!string} url of stylesheet
     */
     function _onStyleSheetAdded(e, url) {
@@ -359,7 +359,7 @@ define(function (require, exports, module) {
     /**
       @private
       Handle change in LiveDevelopment (LivePreview) state
-      @param {!event} event
+      @param {!Event} event
       @param {!number} status
     */
     function _onLiveDevelopmentStatusChange(event, status) {

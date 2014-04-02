@@ -26,14 +26,14 @@
 (function () {
     "use strict";
 
-        /** @type {object} Object literal with available editors for given properties. @see _registerProvider() */
+        /** @type {Object} Object literal with available editors for given properties. @see _registerProvider() */
     var _providers = {},
         /** @type {CSSShapesEditor} current active editor for model.property */
         _activeEditor,
         /** @type {HTMLElement} element matched by model.selector */
         _target = null,
         /**
-          @type {object} Object literal with selector, CSS property and value.
+          @type {Object} Object literal with selector, CSS property and value.
 
           Will be updated by _setup() and _onValueChange()
           Will be synced to Brackets via _getModel() to update text in code editor.
@@ -97,7 +97,7 @@
 
       @throws {TypeError} if input model is falsy or does not contain property
 
-      @param {!object} model object literal with data:
+      @param {!Object} model object literal with data:
           {
               // selector to match an element for editing
               selector: {string},
@@ -197,7 +197,7 @@
 
     /**
       Update the live editor with the given data.
-      @param {!object} model Object literal with CSS property, value, selector.
+      @param {!Object} model Object literal with CSS property, value, selector.
     */
     function _update(model) {
         _activeEditor.update(model);
@@ -219,7 +219,7 @@
       matches model.property in _LD_CSS_EDITOR.setup(model).
 
       @param {!string} property CSS property
-      @param {!object} editor Editor for the property.
+      @param {!Object} editor Editor for the property.
 
       Provided editors MUST implement the follwing interface:
       {
