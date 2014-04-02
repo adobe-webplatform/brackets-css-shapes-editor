@@ -45,8 +45,7 @@ define(function (require, exports, module) {
 
         var _initial = properties || {},
             _props = {},
-            _events = {},
-            _$self = $(this);
+            _events = {};
 
         /**
           Sets or updates properties on the model.
@@ -55,7 +54,7 @@ define(function (require, exports, module) {
           @param {!Object} obj Object literal with key/value pairs
           @param {?Boolean} silent set to false to avoid triggering "change" event
         */
-        function _set(obj, silent) {
+        var _set = function (obj, silent) {
             var hasChanged = false,
                 k;
 
@@ -73,9 +72,9 @@ define(function (require, exports, module) {
             }
 
             if (silent !== true && hasChanged) {
-                _$self.triggerHandler("change", [_props]);
+                $(this).triggerHandler("change", [_props]);
             }
-        }
+        };
 
         if (typeof properties === "object") {
             _set(properties, true);
@@ -103,7 +102,7 @@ define(function (require, exports, module) {
                 _props = JSON.parse(JSON.stringify(_initial));
 
                 if (!silent) {
-                    _$self.triggerHandler("change", [_props]);
+                    $(this).triggerHandler("change", [_props]);
                 }
             }
         };
