@@ -60,7 +60,12 @@ define(function (require, exports, module) {
         LiveEditorDriver    = require("LiveEditorLocalDriver");
 
     // Update if you add editors for new properties
-    var SUPPORTED_PROPS = ["shape-inside", "shape-outside", "clip-path"];
+    var SUPPORTED_PROPS = ["shape-inside", "-webkit-shape-inside", "shape-outside", "-webkit-shape-outside"];
+
+    // Intentional bias towards only -webkit-clip-path (prefixed),
+    //   because clip-path (unprefixed) only applies to SVG.
+    //   -webkit-clip-path applies to HTML & SVG. The properties will merge, eventually.
+    SUPPORTED_PROPS.push("-webkit-clip-path");
 
     // String source of editor and provider
     var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),

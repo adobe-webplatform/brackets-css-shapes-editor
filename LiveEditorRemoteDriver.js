@@ -163,18 +163,12 @@
       @param {!string} value
     */
     function _onValueChange(value) {
-
-        // Chrome reports false positive support for prefix-less clip-path, but only works with prefix
-        // TODO: enforce -webkit-clip-path in main.js SUPPORTED_PROPERTIES
-        // and revert back to using _model.property after https://github.com/adobe/brackets/pull/7373
-        var property = (_model.property === 'clip-path') ? '-webkit-clip-path' : _model.property;
-
-        if (!_target || !value) {
+        if (!_target || !value || typeof value !== 'string') {
             return;
         }
 
         // update the selector target's style
-        _target.style[property] = value;
+        _target.style[_model.property] = value;
 
         // If the previous shape value coordinates are missing, ex: `polygon()`, like auto-suggested by Brackets hinting,
         // the CSSShapesEditor will automatically infer coordintates from the element and return a usable shape value.
