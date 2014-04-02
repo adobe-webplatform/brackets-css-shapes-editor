@@ -29,7 +29,7 @@ define(function (require, exports, module) {
 
     // Modules from the SpecRunner window
     var SpecRunnerUtils             = brackets.getModule("spec/SpecRunnerUtils"),
-        FileUtils                   = brackets.getModule("file/FileUtils"),
+        ExtensionUtils              = brackets.getModule("utils/ExtensionUtils"),
         testStyles                  = require("text!unittest-files/style.css"),
         testHTML                    = require("text!unittest-files/index.html"),
         testContentMatchPositive    = require("text!unittest-files/match-positive.css"),
@@ -497,10 +497,7 @@ define(function (require, exports, module) {
                 Inspector,
                 LiveDevelopment;
 
-            // var testPath    = FileUtils.getNativeBracketsDirectoryPath() + "/extensions/dev/shapes/unittest-files/",
-            // same files from the extension's ./unittests-files
-            // TODO: figure out how to reference files outside the /test/ folder
-            var testPath    = SpecRunnerUtils.getTestPath("/spec/CSSShapesEditor-test-files"),
+            var testPath    = ExtensionUtils.getModulePath(module, "unittest-files"),
                 tempDir     = SpecRunnerUtils.getTempDirectory(),
                 testWindow;
 
