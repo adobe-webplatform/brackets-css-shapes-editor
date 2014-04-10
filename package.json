@@ -1,14 +1,15 @@
 {
-    "name": "css-shapes-editor",
-    "title": "Edit CSS Shapes properties in the browser",
-    "description": "Adds an on-screen GUI editor to edit CSS Shapes values when in Live Preview mode.",
-    "version": "0.1.0",
+    "name": "brackets-css-shapes-editor",
+    "title": "CSS Shapes Editor for Brackets",
+    "description": "Adds a GUI to edit CSS Shapes values in Live Preview mode.",
+    "version": "1.0.0",
     "author": "Adobe Systems Inc.",
     "contributors": [
       "Razvan Caliman <rcaliman@adobe.com>",
-      "François REMY <francois.remy.dev@outlook.com>"
+      "François Remy <francois.remy.dev@outlook.com>",
+      "Bear Travis <betravis@adobe.com>"
     ],
-    "license": "TODO",
+    "license": "MIT",
     "categories": "editing",
     "devDependencies": {
       "grunt": "~0.4.1",
