@@ -1,4 +1,4 @@
-// css-shapes-editor 0.4.0
+// css-shapes-editor 0.5.3
 // 
 // Editor for CSS Shapes in the browser.
 // 
@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 // 
-// build: 2014-04-02
+// build: 2014-04-04
 
 (function (root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -1265,6 +1265,10 @@ define('Editor',['eve', 'CSSUtils', 'snap'], function(eve, CSSUtils, Snap){
             // make sure editor is the top-most thing on the page
             // see http://softwareas.com/whats-the-maximum-z-index
             this.holder.style.zIndex = 2147483647;
+
+            // prevents text selection when doing dbl click
+            this.holder.style.webkitUserSelect = "none";
+            this.holder.style.userSelect = "none";
 
             this.holder.setAttribute('data-role', 'shape-editor');
 
@@ -9291,13 +9295,13 @@ define('PolygonEditor',['Editor', 'CSSUtils', 'lodash', 'snap', 'snap.freeTransf
         },
         bboxAttrs: {},
         axesAttrs: {
-            stroke: 'rgba(0, 192, 238, 1)',
+            stroke: 'rgba(0, 162, 255, 1)',
             'stroke-dasharray': '0, 0',
             opacity: 0.8
         },
         discAttrs: {
             fill: 'rgba(255, 255, 0, 1)',
-            stroke: 'rgba(0, 192, 238, 1)'
+            stroke: 'rgba(0, 162, 255, 1)'
         },
         xUnit: 'px',
         yUnit: 'px'
@@ -9446,7 +9450,7 @@ define('PolygonEditor',['Editor', 'CSSUtils', 'lodash', 'snap', 'snap.freeTransf
             throw new Error('No polygon() function definition in provided value');
         }
 
-        infos = /polygon\s*\((?:([a-z]*),)?\s*((?:[-+0-9.]+[a-z%]*|\s|\,)*)\)\s*((?:margin|content|border|padding)\-box)?/i.exec(shape.trim());
+        infos = /polygon\s*\((?:\s*([a-z]*)\s*,)?\s*((?:[-+0-9.]+[a-z%]*|\s|\,)*)\)\s*((?:margin|content|border|padding)\-box)?/i.exec(shape.trim());
 
         if (infos && infos[2].length > 0){
             coords = (
@@ -9459,7 +9463,7 @@ define('PolygonEditor',['Editor', 'CSSUtils', 'lodash', 'snap', 'snap.freeTransf
                     var points = pair.split(' ').map(function(pointString, i) {
                         var options = {
                             boxType: infos[3] || defaultRefBox,
-                            isHeightRelated: true
+                            isHeightRelated: (i === 1) // only y can be height related.
                         };
 
                         return CSSUtils.convertToPixels(pointString, element, options);
@@ -9543,7 +9547,7 @@ define('PolygonEditor',['Editor', 'CSSUtils', 'lodash', 'snap', 'snap.freeTransf
 
             // turn px value into original units
             xCoord = CSSUtils.convertFromPixels(x, vertex.xUnit, element, { isHeightRelated: false, boxType: refBox });
-            yCoord = CSSUtils.convertFromPixels(y, vertex.yUnit, element, { isHeightRelated: false, boxType: refBox });
+            yCoord = CSSUtils.convertFromPixels(y, vertex.yUnit, element, { isHeightRelated: true, boxType: refBox });
 
             // return space-separted pair
             return [xCoord, yCoord].join(' ');
@@ -9625,9 +9629,9 @@ define('PolygonEditor',['Editor', 'CSSUtils', 'lodash', 'snap', 'snap.freeTransf
                 this.vertices.splice(edge.index1, 0, {
                     x: projection.x,
                     y: projection.y,
-                    // TODO: infer units from the vertices of the edge
-                    xUnits: this.config.xUnit,
-                    yUnits: this.config.yUnit,
+                    // inherit units from the preceding vertex, or use defaults
+                    xUnit: this.vertices[edge.index0].xUnit || this.config.xUnit,
+                    yUnit: this.vertices[edge.index0].yUnit || this.config.yUnit,
                 });
 
                 this.activeVertexIndex = edge.index1;
@@ -10513,17 +10517,17 @@ define('CSSShapesEditor',['PolygonEditor', 'CircleEditor', 'EllipseEditor', 'lod
                     stroke: 'rgba(255, 255, 255, 0.5)',
                 },
                 {
-                    stroke: 'rgba(0, 192, 238, 1)',
+                    stroke: 'rgba(0, 162, 255, 1)',
                     'stroke-dasharray': '4, 5'
                 }
             ],
             point: {
                 radius: 4,
-                stroke: 'rgba(0, 192, 238, 1)',
+                stroke: 'rgba(0, 162, 255, 1)',
                 fill: 'rgba(252, 252, 252, 1)',
             },
             bboxAttrs: {
-                stroke: 'rgba(0, 192, 238, 1)',
+                stroke: 'rgba(0, 162, 255, 1)',
                 fill: 'none',
                 'stroke-dasharray': '0, 0',
                 opacity: 0.8

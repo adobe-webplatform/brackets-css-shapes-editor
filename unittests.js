@@ -92,12 +92,12 @@ define(function (require, exports, module) {
                 expect(scope.onChange).toHaveBeenCalled();
             });
 
-            it("should not thow change event when updated with duplicate", function () {
+            it("should not throw change event when updated with duplicate", function () {
                 model.set({"key": "value"});
                 expect(scope.onChange).not.toHaveBeenCalled();
             });
 
-            it("should not thow change event on setter if asked to be silent", function () {
+            it("should not throw change event on setter if asked to be silent", function () {
                 var silent = true;
                 model.set({"other": "value"}, silent);
 
@@ -138,66 +138,6 @@ define(function (require, exports, module) {
             it("should not throw change event on reset if asked to be silent", function () {
                 model.reset(true);
                 expect(scope.onChange).not.toHaveBeenCalled();
-            });
-        });
-
-        describe("Get range for CSS value", function () {
-
-            beforeEach(function () {
-                var mock = SpecRunnerUtils.createMockEditor(testContentMatchPositive, "css");
-                testDocument = mock.doc;
-                testEditor = mock.editor;
-            });
-
-            afterEach(function () {
-                SpecRunnerUtils.destroyMockEditor(testDocument);
-                testEditor = null;
-                testDocument = null;
-            });
-
-            function testGetRangeAt(pos, expected, trimWhitespace) {
-                var range = main._getRangeForCSSValueAt(testEditor, pos, trimWhitespace || false);
-                expect(range).toEqual(expected);
-            }
-
-            it("should get range for empty circle() starting at begining", function () {
-                var pos =  {line: 6, ch: 19 };
-                var expected = {
-                    start: {line: 6, ch: 17 },
-                    end:   {line: 6, ch: 27 }
-                };
-
-                testGetRangeAt(pos, expected);
-            });
-
-            it("should get range for empty circle() starting at end", function () {
-                var pos =  {line: 6, ch: 27 };
-                var expected = {
-                    start: {line: 6, ch: 17 },
-                    end:   {line: 6, ch: 27 }
-                };
-
-                testGetRangeAt(pos, expected);
-            });
-
-            it("should get range for empty circle() with trimmed whitespace", function () {
-                var pos =  {line: 6, ch: 19 };
-                var expected = {
-                    start: {line: 6, ch: 18 },
-                    end:   {line: 6, ch: 26 }
-                };
-
-                testGetRangeAt(pos, expected, true);
-            });
-
-            it("should get range for full-notation polygon() starting from arbitrary position", function () {
-                var pos =  {line: 15, ch: 55 };
-                var expected = {
-                    start: {line: 15, ch: 17 },
-                    end:   {line: 15, ch: 61 }
-                };
-
-                testGetRangeAt(pos, expected);
             });
         });
 
@@ -328,19 +268,8 @@ define(function (require, exports, module) {
             });
 
             it("should not match commented-out shape-inside property", function () {
-                constructModelAtPos(2, 27);
+                constructModelAtPos(2, 20);
                 expect(main.model.get("property")).not.toBe("shape-inside");
-            });
-
-            it("should not match non-functional value", function () {
-                constructModelAtPos(3, 27);
-                expect(main.model.get("value")).not.toBe("circle");
-                expect(main.model.get("value")).toBe(null);
-            });
-
-            it("should not match polygon-like value", function () {
-                constructModelAtPos(4, 27);
-                expect(main.model.get("value")).not.toBe("fake-polygon()");
             });
         });
 
@@ -477,17 +406,6 @@ define(function (require, exports, module) {
 
                 expect(LiveEditorLocalDriver.remove).toHaveBeenCalled();
             });
-
-            it("should call remove() when LivePreview is turned off", function () {
-                var deferred = $.Deferred();
-                spyOn(LiveEditorLocalDriver, "remove").andReturn(deferred.promise());
-
-                main._setup();
-                main._teardown();
-
-                expect(LiveEditorLocalDriver.remove).toHaveBeenCalled();
-            });
-
         });
 
         describe("Live Preview Workflow", function () {
