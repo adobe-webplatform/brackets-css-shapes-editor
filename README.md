@@ -1,6 +1,7 @@
 # CSS Shapes Editor for Brackets
 
-Extension for [Brackets](https://github.com/adobe/brackets/) / Adobe Edge Code.
+Extension for [Brackets](https://github.com/adobe/brackets/) and [Adobe Edge Code](http://html.adobe.com/edge/code/).
+
 Adds an on-screen GUI editor for CSS Shapes values when in Live Preview mode.
 
 ## How to Install
