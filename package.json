@@ -1,7 +1,7 @@
 {
     "name": "brackets-css-shapes-editor",
     "title": "CSS Shapes Editor for Brackets",
-    "description": "Adds a GUI to edit CSS Shapes values in Live Preview mode.",
+    "description": "Adds an interactive editor for CSS Shapes values in Live Preview mode.",
     "version": "1.1.0",
     "author": "Adobe Systems Inc.",
     "contributors": [
