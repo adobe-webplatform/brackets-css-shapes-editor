@@ -55,8 +55,6 @@
         throw new Error("Missing CSSShapesEditor");
     }
 
-    var _onKeydown;
-
     function Provider() {}
 
     Provider.prototype.setup = function (target, model) {
@@ -72,41 +70,12 @@
             options.defaultRefBox = "margin-box";
         }
 
-        /*
-          @private
-          Handle keydown events when a polygon editor is active.
-          Declared globally within module so it can be removed by Provider.remove()
-          Defined here so it can access scope.inst
-
-          T key toggles the free transform editor (scale/rotate)
-          Esc key turns off free transform editor; quietly ignored if editor was never turned on.
-
-          @param {Event} e keydown event
-        */
-        _onKeydown = function (e) {
-            // only handle cases for polygon editors
-            if (scope.inst.type !== "polygon") {
-                return;
-            }
-            // T key toggles rotate/scale editor
-            if (e.keyIdentifier === "U+0054") {
-                scope.inst.toggleFreeTransform();
-            }
-
-            // escape key turns off rotate/scale editor
-            if (e.keyCode === 27) {
-                scope.inst.turnOffFreeTransform();
-            }
-        };
-
         scope.inst = new CSSShapesEditor(target, model.value, options);
         scope.inst.on("shapechange", function () {
             if (scope.callback) {
                 scope.callback.call(scope.inst, scope.inst.getCSSValue());
             }
         });
-
-        document.addEventListener("keydown", _onKeydown);
     };
 
     Provider.prototype.update = function (model) {
@@ -133,7 +102,6 @@
         this.inst.remove();
         this.inst = null;
         this.callback = undefined;
-        document.removeEventListener("keydown", _onKeydown);
     };
 
     var properties = ["shape-outside", "-webkit-shape-outside", "clip-path", "-webkit-clip-path"];
