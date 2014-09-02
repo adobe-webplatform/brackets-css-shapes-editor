@@ -39,6 +39,16 @@ To enable CSS Shapes:
 4. Click _Enable_
 5. Reload LivePreview.
 
+## Changelog
+
+### v1.1.0
+- sync with [shapes editor library v0.8.0](https://github.com/adobe-webplatform/css-shapes-editor/releases/tag/v0.8.0)
+  - fixes various bugs related to reference boxes and percentage-based coordinates;
+  - adds on-screen controls for polygon edit / transform modes;
+  - uses minified version of library;
+- removes keyboard shortcut (T key) to toggle polygon transform mode.
+- removes handling & feature detection of `shape-inside` (obsolete from CSS Shapes Level 1)
+
 ## License
 
 MIT-licensed -- see `main.js` for details.
