@@ -68,7 +68,7 @@ define(function (require, exports, module) {
     SUPPORTED_PROPS.push("-webkit-clip-path");
 
     // String source of editor and provider
-    var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor.js"),
+    var CSSShapesEditor         = require("text!thirdparty/CSSShapesEditor-min.js"),
         CSSShapesEditorProvider = require("text!thirdparty/CSSShapesEditorProvider.js");
 
     /** @type {Array} Dependencies as strings to be injected in the HTML page in LivePreview */
