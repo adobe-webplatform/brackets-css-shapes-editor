@@ -64,10 +64,6 @@
             options = {};
 
         switch (model.property) {
-        case "shape-inside":
-        case "-webkit-shape-inside":
-            options.defaultRefBox = "content-box";
-            break;
         case "clip-path":
         case "-webkit-clip-path":
             options.defaultRefBox = "border-box";
@@ -140,7 +136,7 @@
         document.removeEventListener("keydown", _onKeydown);
     };
 
-    var properties = ["shape-inside", "-webkit-shape-inside", "shape-outside", "-webkit-shape-outside", "clip-path", "-webkit-clip-path"];
+    var properties = ["shape-outside", "-webkit-shape-outside", "clip-path", "-webkit-clip-path"];
 
     properties.forEach(function (property) {
 
